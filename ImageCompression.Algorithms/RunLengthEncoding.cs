@@ -39,8 +39,8 @@ namespace ImageCompression.Algorithms
                     isRepeated = true;
                     if (count == MaxCount)
                     {
-                        AddSimilarSequance(ref compressedData, count,previous);
-                        
+                        AddSimilarSequance(ref compressedData, count, previous);
+
                         isRepeated = false;
                         if (i == ImageBytes.Length)
                         {
@@ -54,7 +54,7 @@ namespace ImageCompression.Algorithms
                         count++;
                         if (i == ImageBytes.Length)
                         {
-                            compressedData.Add(TransformToRepeatedCounter(count));
+                            compressedData.Add(TransformNumberToRepeatedCounter(count));
                             compressedData.Add(current);
                         }
                     }
@@ -63,7 +63,7 @@ namespace ImageCompression.Algorithms
                 {
                     if (isRepeated)
                     {
-                        compressedData.Add(TransformToRepeatedCounter(count));
+                        compressedData.Add(TransformNumberToRepeatedCounter(count));
                         compressedData.Add(previous);
                         count = 0;
                         if (i == ImageBytes.Length)
@@ -107,22 +107,20 @@ namespace ImageCompression.Algorithms
             }
         }
 
-        
         private void AddSimilarSequance(ref List<byte> result, byte count, byte value)
         {
             result.Add((byte)(FlagSize + count));
             result.Add(value);
         }
-        private byte TransformToRepeatedCounter(byte count) => (byte)(FlagSize + count);
+        private byte TransformNumberToRepeatedCounter(byte count) => (byte)(FlagSize + count);
         private byte TransformRepeatedCountToNumber(byte imageByte) => (byte)(imageByte - FlagSize);
         private bool IsRepeatedCounter(byte num) => num > FlagSize;
         public byte[] Decompress(byte[] compressedImage)
         {
-            if (compressedImage == null || compressedImage.Length == 0)
+            if (compressedImage == null || compressedImage.Length == 0 || compressedImage.Length == 1)
             {
                 throw new ArgumentException("Недопустимые параметры.");
             }
-            if (compressedImage.Length == 1) return compressedImage;
 
             List<byte> decompressedData = new List<byte>();
             for (int i = 0; i < compressedImage.Length; i++)
@@ -130,27 +128,56 @@ namespace ImageCompression.Algorithms
 
                 if (IsRepeatedCounter(compressedImage[i]))
                 {
-                    byte count = (byte)(TransformRepeatedCountToNumber(compressedImage[i]) + 1);
-                    i++;
-                    for (byte j = 0; j < count; j++)
-                    {
-                        decompressedData.Add(compressedImage[i]);
-                    }
+                    byte count = TransformRepeatedCountToNumber(compressedImage[i]);
+                    DecompressRepeatedSequence(ref decompressedData, compressedImage, ref i, count + 1);
                 }
                 else
                 {
-                    byte count = (byte)(compressedImage[i] + 1);
-                    for (byte j = 0; j < count; j++)
-                    {
-                        i++;
-                        decompressedData.Add(compressedImage[i]);
-                    }
+                    DecompressNotRepeatedSequence(ref decompressedData, compressedImage, ref i, compressedImage[i] + 1);
                 }
             }
 
             return decompressedData.ToArray();
         }
 
+        /// <summary>
+        /// Превращает сжатое значение в последовательность повторяющихся элементов
+        /// </summary>
+        /// <param name="result">Список хранящий декодированные элементы</param>
+        /// <param name="compressedArray">Массив с сжатыми значениями</param>
+        /// <param name="currentIndex">Индекс на мамент считывания количества элементов в последовательности</param>
+        /// <param name="count">Количество элементов последовательности</param>
+        private void DecompressRepeatedSequence(ref List<byte> result, in byte[] compressedArray,ref int currentIndex, int count) 
+            => DecompressSequence(ref result, compressedArray, ref currentIndex, count, true);
+
+        /// <summary>
+        /// Превращает сжатое значение в последовательность неповторяющихся элементов
+        /// </summary>
+        /// <param name="result">Список хранящий декодированные элементы</param>
+        /// <param name="compressedArray">Массив с сжатыми значениями</param>
+        /// <param name="currentIndex">Индекс на мамент считывания количества элементов в последовательности</param>
+        /// <param name="count">Количество элементов последовательности</param>
+        private void DecompressNotRepeatedSequence(ref List<byte> result, in byte[] compressedArray, ref int currentIndex, int count) 
+            => DecompressSequence(ref result, compressedArray, ref currentIndex, count);
+
+        /// <summary>
+        /// Превращает сжатое значение в последовательность
+        /// </summary>
+        /// <param name="result">Список хранящий декодированные элементы</param>
+        /// <param name="compressedArray">Массив с сжатыми значениями</param>
+        /// <param name="currentIndex">Индекс на мамент считывания количества элементов в последовательности</param>
+        /// <param name="count">Количество элементов последовательности</param>
+        /// <param name="isRepeated">Является ли последовательность повторяющей</param>
+        private void DecompressSequence(ref List<byte> result, in byte[] compressedArray, ref int currentIndex, int count, bool isRepeated = false)
+        {
+            if(isRepeated) currentIndex += 1;
+            int offset = isRepeated ? 0 : 1;
+            for (byte i = 0; i < count; i++)
+            {
+                currentIndex += offset;
+                result.Add(compressedArray[currentIndex]);
+            }
+        }
 
 
     }
