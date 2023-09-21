@@ -96,6 +96,14 @@ namespace ImageCompression.Tests
         }
 
         [TestMethod]
+        public void MixBytesWithThreeSimilarSequence2()
+        {
+            byte[] uncompressedExpected = new byte[] { 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 3, 4, 4, 4, 4 };
+            byte[] compressedExpected = new byte[] { 0, 1, 131, 2, 131, 1, 1, 2, 3, 131, 4 };
+            CheckArrays(uncompressedExpected, compressedExpected);
+        }
+
+        [TestMethod]
         public void DecompressionWith255()
         {
             byte[] uncompressedExpected = new byte[] { 1, 2, 2, 2, 2, 255, 255, 255, 255, 1, 255, 1, 2, 3, 4, 4, 4, 4 };
