@@ -7,7 +7,7 @@ namespace ImageCompression.Tests
     [TestClass]
     public class RunLengthEncoding
     {
-        IAlgorithm Algorithm = new RLE();
+        IAlgorithm Algorithm = new RLE(1);
 
         [TestMethod]
         public void OneByte()
@@ -112,6 +112,14 @@ namespace ImageCompression.Tests
         }
 
         [TestMethod]
+        public void BorderValues()
+        {
+            byte[] uncompressedExpected = new byte[] { 255,252,252,255,251,251,255,250,247,255,248,245,254,243,240,250,243,237};
+            byte[] compressedExpected = new byte[] { 0,255,129, 252,0,255,129,251,11,255,250,247,255,248,245,254,243,240,250,243,237};
+            CheckArrays(uncompressedExpected, compressedExpected);
+        }
+
+        [TestMethod]
         public void More128ByteSimilar()
         {
             byte[] uncompressedExpected = new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //10
@@ -128,6 +136,42 @@ namespace ImageCompression.Tests
                                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //120
                                                        1, 1, 1, 1, 1, 1, 1, 1, 1 };
             byte[] compressedExpected = new byte[] { 255, 1, 0, 1 };
+            CheckArrays(uncompressedExpected, compressedExpected);
+        }
+
+        [TestMethod]
+        public void More128ByteNotSimilar()
+        {
+            byte[] uncompressedExpected = new byte[] { 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //10
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //20
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //30
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //40
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //50
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //60
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //70
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //80
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //90
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //100
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //110
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //120
+                                                       1, 2, 1, 2, 1, 2, 1, 2,       //128
+                                                       1, 2,                         //130
+                                                       1, 1, 1, 1, 1, 1, 1, 1, 1 };  //9
+            byte[] compressedExpected = new byte[] { 127,
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //10
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //20
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //30
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //40
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //50
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //60
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //70
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //80
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //90
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //100
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //110
+                                                       1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //120
+                                                       1, 2, 1, 2, 1, 2, 1, 2,       //128
+                                                       1, 1, 2, 136, 1 };
             CheckArrays(uncompressedExpected, compressedExpected);
         }
 
