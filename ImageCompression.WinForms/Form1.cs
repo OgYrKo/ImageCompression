@@ -23,7 +23,7 @@ namespace ImageCompression.WinForms
         public Form1()
         {
             InitializeComponent();
-            Algorithm = new RunLengthEncoding();
+            Algorithm = new RunLengthEncoding(1);
         }
 
         private void OpenButton_Click(object sender, EventArgs e)
@@ -38,6 +38,8 @@ namespace ImageCompression.WinForms
             {
                 ImageBytes = ReadBMPFile(openFileDialog.FileName);
                 DrawImage(ImageBytes, UncompressedPicture);
+                PictureDispose(CompressedPicture);
+                ResultTextBox.Text = "";
             }
         }
 
@@ -100,7 +102,8 @@ namespace ImageCompression.WinForms
             }
         }
 
-        private void DrawImage(byte[] bytes, PictureBox pictureBox) => DrawImage(GetImageFromBytes(bytes), pictureBox);
+        private void DrawImage(byte[] bytes, PictureBox pictureBox) 
+            => DrawImage(GetImageFromBytes(bytes), pictureBox);
 
         private void DrawImage(Image image, PictureBox pictureBox)
         {
@@ -108,8 +111,7 @@ namespace ImageCompression.WinForms
             try
             {
                 // Освобождаем ресурсы
-                if (pictureBox.Image != null)
-                    pictureBox.Image.Dispose();
+                PictureDispose(pictureBox);
                 // Создаем новое изображение с максимальными размерами PictureBox
                 Image scaledImage = ScaleImage(image, pictureBox.Width, pictureBox.Height);
 
@@ -121,7 +123,6 @@ namespace ImageCompression.WinForms
                 Bitmap centeredImage = new Bitmap(pictureBox.Width, pictureBox.Height);
                 using (Graphics g = Graphics.FromImage(centeredImage))
                 {
-                    //g.Clear(Color.White); // Очищаем фон
                     g.DrawImage(scaledImage, x, y); // Рисуем масштабированное изображение по центру
 
                 }
@@ -135,6 +136,13 @@ namespace ImageCompression.WinForms
                 // Обработка ошибок загрузки изображения
                 MessageBox.Show("Ошибка при открытии изображения: " + ex.Message);
             }
+        }
+
+        private void PictureDispose(PictureBox pictureBox)
+        {
+            if (pictureBox.Image != null)
+                pictureBox.Image.Dispose();
+            pictureBox.Image = null;
         }
 
         private void SaveButton_Click(object sender, EventArgs e)
@@ -180,14 +188,23 @@ namespace ImageCompression.WinForms
         {
             try
             {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            byte[] decompressedImage = Algorithm.Decompress(CompressedImageBytes);
-            stopwatch.Stop();
-            SetDecompressedResult(stopwatch.ElapsedMilliseconds);
-            bool areEqual = AreArraysEqual(ImageBytes, decompressedImage);
-            MessageBox.Show($"Исходные данные и распакованные данные {(areEqual ? "совпадают" : "не совпадают")}");
-            DrawImage(decompressedImage, CompressedPicture);
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                byte[] decompressedImage = Algorithm.Decompress(CompressedImageBytes);
+                stopwatch.Stop();
+                SetDecompressedResult(stopwatch.ElapsedMilliseconds);
+                bool areEqual = AreArraysEqual(ImageBytes, decompressedImage);
+                if (!areEqual)
+                {
+                    int index = FirstNotEqualIndex(ImageBytes, decompressedImage);
+                    if (index != -1)
+                    {
+                        (byte[], byte[]) arrs = GetNeighbours(ImageBytes, decompressedImage, 51, index);
+                        byte[] arr1 = arrs.Item1, arr2 = arrs.Item2;
+                    }
+                    MessageBox.Show($"Исходные данные и распакованные данные {(areEqual ? "совпадают" : "не совпадают")}");
+                }
+                DrawImage(decompressedImage, CompressedPicture);
             }
             catch (Exception ex)
             {
@@ -207,6 +224,28 @@ namespace ImageCompression.WinForms
             }
 
             return true;
+        }
+
+        private int FirstNotEqualIndex(byte[] arr1, byte[] arr2)
+        {
+            int i = -1;
+            while (++i < Math.Min(arr1.Length, arr2.Length))
+            {
+                if (arr1[i] != arr2[i]) return i;
+            }
+            return -1;
+        }
+
+        private (byte[], byte[]) GetNeighbours(byte[] arr1, byte[] arr2, int count, int index)
+        {
+            int startIndex = index - count / 2;
+            (byte[], byte[]) arrs = (new byte[count], new byte[count]);
+            for (int i = 0; i < count; i++, startIndex++)
+            {
+                arrs.Item1[i] = arr1[startIndex];
+                arrs.Item2[i] = arr2[startIndex];
+            }
+            return arrs;
         }
     }
 }
