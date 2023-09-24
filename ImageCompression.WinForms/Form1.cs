@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using ImageCompression.Algorithms;
 using ImageCompression.Interfaces;
@@ -23,7 +16,7 @@ namespace ImageCompression.WinForms
         public Form1()
         {
             InitializeComponent();
-            Algorithm = new RunLengthEncoding(1);
+            Algorithm = new RunLengthEncoding(3);
         }
 
         private void OpenButton_Click(object sender, EventArgs e)
@@ -157,12 +150,20 @@ namespace ImageCompression.WinForms
                 MessageBox.Show("Не выбрано изображение для сжатия: ", "Инфо", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
                 return;
             }
+            try
+            {
+
 
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             CompressedImageBytes = Algorithm.Compress(ImageBytes);
             stopwatch.Stop();
             SetCompressionResult(ImageBytes.LongLength, CompressedImageBytes.LongLength, stopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void SetCompressionResult(long uncompressedImageSize, long compressedImageSize, long compressionTime)

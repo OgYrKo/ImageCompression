@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
@@ -41,7 +42,10 @@ namespace ImageCompression.Algorithms
             Parallel.For(0, ArraysCount, i =>
             {
                 byte[] subArray = new byte[subArrayLength];
-                Array.Copy(byteArray, i * subArrayLength, subArray, 0, subArrayLength);
+                for (int j = 0; j < subArrayLength; j++)
+                {
+                    subArray[j] = byteArray[j * ArraysCount + i];
+                }
                 result[i] = CompressBytes(subArray);
             });
             return CombineCompressionArrays(result);
@@ -49,50 +53,82 @@ namespace ImageCompression.Algorithms
 
         private byte[] CombineCompressionArrays(byte[][] bytes)
         {
-            List<byte> result = new List<byte>
+            List<byte>[] results = new List<byte>[bytes.Length];
+
+            Parallel.For(0, bytes.Length, arrayIndex =>
+            {
+                results[arrayIndex] = new List<byte>(bytes[arrayIndex].Length);
+                int times = bytes[arrayIndex].Length / byte.MaxValue;
+                int count = bytes[arrayIndex].Length % byte.MaxValue;
+
+                for (int j = 0; j < times; j++)
+                {
+                    results[arrayIndex].Add(byte.MaxValue);
+                    for(int i = 0; i < byte.MaxValue; i++)
+                    {
+                        results[arrayIndex].Add(bytes[arrayIndex][j * byte.MaxValue+i]);
+                    }
+                }
+                if (count != 0)
+                {
+                    results[arrayIndex].Add((byte)count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        results[arrayIndex].Add(bytes[arrayIndex][times * byte.MaxValue + i]);
+                    }
+                }
+                results[arrayIndex].Add(0);
+            });
+
+            int totalBytes = results.Sum(arr => arr.Count);
+            IEnumerable<byte> result = new List<byte>(totalBytes)
             {
                 (byte)bytes.Length
             };
+            
             for (int i = 0; i < bytes.Length; i++)
             {
-                int times = bytes[i].Length / byte.MaxValue;
-                int count = bytes[i].Length % byte.MaxValue;
-
-                for(int j = 0; j < times; j++)
-                {
-                    result.Add((byte)count);
-                    result.AddRange(bytes[i].Skip(j * byte.MaxValue).Take(byte.MaxValue));
-                }
-
-                result.Add((byte)count);
-                result.AddRange(bytes[i].Skip(times * byte.MaxValue).Take(count));
-                result.Add(0);
+                result = result.Concat(results[i]);
             }
+            
             return result.ToArray();
+        }
+
+        private byte[] CombineDecompressionArrays(byte[][] bytes)
+        {
+            byte[] result = new byte[bytes.Length * bytes[0].Length];
+            for (int i = 0; i < bytes[0].Length; i++)
+            {
+                for(int j=0; j < bytes.Length; j++)
+                {
+                    result[i * bytes.Length + j] = bytes[j][i];
+                }
+            }
+            return result;
         }
 
         private byte[][] SplitCompressionArray(byte[] bytes)
         {
             int arraysCount = bytes[0];
-            
-            byte[][]result = new byte[arraysCount][];
-            for(int i = 1; i < bytes.Length; i++)
+
+            byte[][] result = new byte[arraysCount][];
+            for (int arrayIndex = 0, i = 1; arrayIndex < arraysCount; arrayIndex++, i++)
             {
                 List<byte> listResult = new List<byte>();
                 while (bytes[i] != 0)
                 {
+                    int count = bytes[i];
                     i++;
-                    for(int j = 0; j < bytes[i]; j++,i++)
+                    for (int j = 0; j < count; j++, i++)
                     {
                         listResult.Add(bytes[i]);
                     }
                 }
-                result[i]= listResult.ToArray();
+                result[arrayIndex] = listResult.ToArray();
             }
 
             return result;
         }
-
         private byte[] CompressBytes(byte[] byteArray)
         {
             if (byteArray == null || byteArray.Length == 0)
@@ -103,7 +139,6 @@ namespace ImageCompression.Algorithms
             List<byte> countedSequance = CountSequances(byteArray);
             return JoinSingleSequance(countedSequance);
         }
-
         public byte[] Decompress(byte[] byteArray)
         {
             if (byteArray == null || byteArray.Length == 0)
@@ -111,14 +146,14 @@ namespace ImageCompression.Algorithms
                 throw new ArgumentException("Недопустимые параметры.");
             }
 
-            byte[][] arrays= SplitCompressionArray(byteArray);
+            byte[][] arrays = SplitCompressionArray(byteArray);
             byte[][] result = new byte[arrays.Length][];
             Parallel.For(0, arrays.Length, i =>
             {
                 result[i] = DecompressBytes(arrays[i]);
             });
 
-            return CombineCompressionArrays(result);
+            return CombineDecompressionArrays(result);
         }
         private byte[] DecompressBytes(byte[] compressedImage)
         {
