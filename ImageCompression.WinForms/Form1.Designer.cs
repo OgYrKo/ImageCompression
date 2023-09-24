@@ -37,7 +37,9 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.OpenButton = new System.Windows.Forms.ToolStripMenuItem();
+            this.OpenCompressedFile = new System.Windows.Forms.ToolStripMenuItem();
             this.SaveButton = new System.Windows.Forms.ToolStripMenuItem();
+            this.SaveCompressedFileButton = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.UncompressedPicture)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.CompressedPicture)).BeginInit();
             this.menuStrip1.SuspendLayout();
@@ -61,6 +63,7 @@
             // 
             // CompressionButton
             // 
+            this.CompressionButton.Enabled = false;
             this.CompressionButton.Location = new System.Drawing.Point(128, 569);
             this.CompressionButton.Name = "CompressionButton";
             this.CompressionButton.Size = new System.Drawing.Size(430, 40);
@@ -74,8 +77,10 @@
             this.ResultTextBox.Location = new System.Drawing.Point(744, 503);
             this.ResultTextBox.Multiline = true;
             this.ResultTextBox.Name = "ResultTextBox";
+            this.ResultTextBox.ReadOnly = true;
             this.ResultTextBox.Size = new System.Drawing.Size(451, 174);
             this.ResultTextBox.TabIndex = 3;
+            this.ResultTextBox.TabStop = false;
             // 
             // AlgorithmsComboBox
             // 
@@ -85,9 +90,11 @@
             this.AlgorithmsComboBox.Name = "AlgorithmsComboBox";
             this.AlgorithmsComboBox.Size = new System.Drawing.Size(430, 37);
             this.AlgorithmsComboBox.TabIndex = 4;
+            this.AlgorithmsComboBox.SelectedIndexChanged += new System.EventHandler(this.AlgorithmsComboBox_SelectedIndexChanged);
             // 
             // DecompressButton
             // 
+            this.DecompressButton.Enabled = false;
             this.DecompressButton.Location = new System.Drawing.Point(128, 637);
             this.DecompressButton.Name = "DecompressButton";
             this.DecompressButton.Size = new System.Drawing.Size(430, 40);
@@ -111,7 +118,9 @@
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.OpenButton,
-            this.SaveButton});
+            this.OpenCompressedFile,
+            this.SaveButton,
+            this.SaveCompressedFileButton});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(46, 24);
             this.fileToolStripMenuItem.Text = "File";
@@ -119,16 +128,32 @@
             // OpenButton
             // 
             this.OpenButton.Name = "OpenButton";
-            this.OpenButton.Size = new System.Drawing.Size(152, 26);
+            this.OpenButton.Size = new System.Drawing.Size(241, 26);
             this.OpenButton.Text = "Open";
             this.OpenButton.Click += new System.EventHandler(this.OpenButton_Click);
             // 
+            // OpenCompressedFile
+            // 
+            this.OpenCompressedFile.Name = "OpenCompressedFile";
+            this.OpenCompressedFile.Size = new System.Drawing.Size(241, 26);
+            this.OpenCompressedFile.Text = "Open Compressed File";
+            this.OpenCompressedFile.Click += new System.EventHandler(this.OpenCompressedFile_Click);
+            // 
             // SaveButton
             // 
+            this.SaveButton.Enabled = false;
             this.SaveButton.Name = "SaveButton";
-            this.SaveButton.Size = new System.Drawing.Size(152, 26);
+            this.SaveButton.Size = new System.Drawing.Size(241, 26);
             this.SaveButton.Text = "Save As...";
             this.SaveButton.Click += new System.EventHandler(this.SaveButton_Click);
+            // 
+            // SaveCompressedFile
+            // 
+            this.SaveCompressedFileButton.Enabled = false;
+            this.SaveCompressedFileButton.Name = "SaveCompressedFile";
+            this.SaveCompressedFileButton.Size = new System.Drawing.Size(241, 26);
+            this.SaveCompressedFileButton.Text = "Save Compressed File";
+            this.SaveCompressedFileButton.Click += new System.EventHandler(this.SaveCompressedFile_Click);
             // 
             // Form1
             // 
@@ -169,6 +194,8 @@
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem OpenButton;
         private System.Windows.Forms.ToolStripMenuItem SaveButton;
+        private System.Windows.Forms.ToolStripMenuItem OpenCompressedFile;
+        private System.Windows.Forms.ToolStripMenuItem SaveCompressedFileButton;
     }
 }
 

@@ -11,31 +11,18 @@ namespace ImageCompression.WinForms
     {
         private byte[] ImageBytes { get; set; }
         private byte[] CompressedImageBytes { get; set; }
-        private IAlgorithm Algorithm { get; set; }
+        private IAlgorithm CurrentAlgorithm { get; set; }
+        private readonly string BMPFilter = "Изображения BMP|*.bmp|Все файлы|*.*";
+        private readonly string BinFilter = "Bin Files (*.bin)|*.bin|All Files (*.*)|*.*";
 
         public Form1()
         {
             InitializeComponent();
-            Algorithm = new RunLengthEncoding(3);
+            AlgorithmsComboBox.DataSource = Enum.GetValues(typeof(Algorithm));
+            CurrentAlgorithm = new RunLengthEncoding(3);
         }
 
-        private void OpenButton_Click(object sender, EventArgs e)
-        {
-            // Создаем диалоговое окно для выбора файла
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-
-            // Устанавливаем фильтр для файлов с расширением .bmp
-            openFileDialog.Filter = "Изображения BMP|*.bmp|Все файлы|*.*";
-
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                ImageBytes = ReadBMPFile(openFileDialog.FileName);
-                DrawImage(ImageBytes, UncompressedPicture);
-                PictureDispose(CompressedPicture);
-                ResultTextBox.Text = "";
-            }
-        }
-
+        #region <--- Work with file --->
         private byte[] ReadBMPFile(string filePath)
         {
             try
@@ -59,22 +46,83 @@ namespace ImageCompression.WinForms
                 return null;
             }
         }
-
-        private Image ScaleImage(Image image, int maxWidth, int maxHeight)
+        private byte[] OpenFile(string filter)
         {
-            double ratioX = (double)maxWidth / image.Width;
-            double ratioY = (double)maxHeight / image.Height;
-            double ratio = Math.Min(ratioX, ratioY);
+            // Создаем диалоговое окно для выбора файла
+            OpenFileDialog openFileDialog = new OpenFileDialog();
 
-            int newWidth = (int)(image.Width * ratio);
-            int newHeight = (int)(image.Height * ratio);
+            // Устанавливаем фильтр для файлов с расширением .bmp
+            openFileDialog.Filter = filter;
 
-            Bitmap newImage = new Bitmap(newWidth, newHeight);
-            Graphics.FromImage(newImage).DrawImage(image, 0, 0, newWidth, newHeight);
-
-            return newImage;
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+                return ReadBMPFile(openFileDialog.FileName);
+            else
+                return null;
         }
+        private void OpenButton_Click(object sender, EventArgs e)
+        {
+            ImageBytes = OpenFile(BMPFilter);
+            if (ImageBytes == null)
+                MessageBox.Show("Ошибка открытия файла");
+            else
+            {
+                DrawImage(ImageBytes, UncompressedPicture);
+                PictureDispose(CompressedPicture);
+            }
+            ResultTextBox.Text = "";
+            SaveCompressedFileButton.Enabled = false;
+            DecompressButton.Enabled = false;
+            SaveButton.Enabled = true;
+            CompressionButton.Enabled = true;
+        }
+        private void OpenCompressedFile_Click(object sender, EventArgs e)
+        {
+            CompressedImageBytes = OpenFile(BinFilter);
+            if (CompressedImageBytes == null)
+                MessageBox.Show("Ошибка открытия файла");
+            CompressionButton.Enabled = false;
+            DecompressButton.Enabled = true;
+            SaveCompressedFileButton.Enabled = true;
+        }
+        private void SaveFile(byte[] bytesToSave, string filter)
+        {
+            if (bytesToSave != null && bytesToSave.Length > 0)
+            {
+                // Создаем диалоговое окно для выбора местоположения и имени файла
+                SaveFileDialog saveFileDialog = new SaveFileDialog();
+                saveFileDialog.Filter = filter;
+                saveFileDialog.FilterIndex = 1; // Устанавливаем индекс фильтра по умолчанию
 
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        // Записываем байты в выбранный файл
+                        File.WriteAllBytes(saveFileDialog.FileName, bytesToSave);
+                        MessageBox.Show("Файл успешно сохранен!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Ошибка при сохранении файла: " + ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Нет данных для сохранения.", "Предупреждение", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+        private void SaveButton_Click(object sender, EventArgs e)
+        {
+            SaveFile(ImageBytes, BMPFilter);
+        }
+        private void SaveCompressedFile_Click(object sender, EventArgs e)
+        {
+            SaveFile(CompressedImageBytes, BinFilter);
+        }
+        #endregion <--- Work with file --->
+
+        #region <--- Picture Drawing -->
         private static Image GetImageFromBytes(byte[] bmpBytes)
         {
             try
@@ -94,10 +142,8 @@ namespace ImageCompression.WinForms
                 return null;
             }
         }
-
-        private void DrawImage(byte[] bytes, PictureBox pictureBox) 
+        private void DrawImage(byte[] bytes, PictureBox pictureBox)
             => DrawImage(GetImageFromBytes(bytes), pictureBox);
-
         private void DrawImage(Image image, PictureBox pictureBox)
         {
 
@@ -130,19 +176,29 @@ namespace ImageCompression.WinForms
                 MessageBox.Show("Ошибка при открытии изображения: " + ex.Message);
             }
         }
+        private Image ScaleImage(Image image, int maxWidth, int maxHeight)
+        {
+            double ratioX = (double)maxWidth / image.Width;
+            double ratioY = (double)maxHeight / image.Height;
+            double ratio = Math.Min(ratioX, ratioY);
 
+            int newWidth = (int)(image.Width * ratio);
+            int newHeight = (int)(image.Height * ratio);
+
+            Bitmap newImage = new Bitmap(newWidth, newHeight);
+            Graphics.FromImage(newImage).DrawImage(image, 0, 0, newWidth, newHeight);
+
+            return newImage;
+        }
         private void PictureDispose(PictureBox pictureBox)
         {
             if (pictureBox.Image != null)
                 pictureBox.Image.Dispose();
             pictureBox.Image = null;
         }
+        #endregion <--- Picture Drawing -->
 
-        private void SaveButton_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        #region <--- Compression --->
         private void CompressionButton_Click(object sender, EventArgs e)
         {
             if (ImageBytes == null)
@@ -152,30 +208,22 @@ namespace ImageCompression.WinForms
             }
             try
             {
-
-
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            CompressedImageBytes = Algorithm.Compress(ImageBytes);
-            stopwatch.Stop();
-            SetCompressionResult(ImageBytes.LongLength, CompressedImageBytes.LongLength, stopwatch.ElapsedMilliseconds);
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                CompressedImageBytes = CurrentAlgorithm.Compress(ImageBytes);
+                stopwatch.Stop();
+                SetCompressionResult(ImageBytes.LongLength, CompressedImageBytes.LongLength, stopwatch.ElapsedMilliseconds);
+                DecompressButton.Enabled = true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
         }
-
         private void SetCompressionResult(long uncompressedImageSize, long compressedImageSize, long compressionTime)
         {
             ResultTextBox.Text = GetCompressionResultString(uncompressedImageSize, compressedImageSize, compressionTime);
         }
-
-        private void SetDecompressedResult(long decompressionTime)
-        {
-            ResultTextBox.Text += $"Время восстановления: {decompressionTime} мс\n\r";
-        }
-
         private string GetCompressionResultString(long uncompressedImageSize, long compressedImageSize, long compressionTime)
         {
             string result = $"Размер исходного изображения: {uncompressedImageSize} байт\r\n";
@@ -184,35 +232,45 @@ namespace ImageCompression.WinForms
             result += $"Время сжатия: {compressionTime} мс\r\n";
             return result;
         }
-
         private void DecompressButton_Click(object sender, EventArgs e)
         {
             try
             {
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
-                byte[] decompressedImage = Algorithm.Decompress(CompressedImageBytes);
+                byte[] decompressedImage = CurrentAlgorithm.Decompress(CompressedImageBytes);
                 stopwatch.Stop();
                 SetDecompressedResult(stopwatch.ElapsedMilliseconds);
-                bool areEqual = AreArraysEqual(ImageBytes, decompressedImage);
-                if (!areEqual)
+                if (ImageBytes != null)
                 {
-                    int index = FirstNotEqualIndex(ImageBytes, decompressedImage);
-                    if (index != -1)
+                    bool areEqual = AreArraysEqual(ImageBytes, decompressedImage);
+                    if (!areEqual)
                     {
-                        (byte[], byte[]) arrs = GetNeighbours(ImageBytes, decompressedImage, 51, index);
-                        byte[] arr1 = arrs.Item1, arr2 = arrs.Item2;
+                        int index = FirstNotEqualIndex(ImageBytes, decompressedImage);
+                        if (index != -1)
+                        {
+                            (byte[], byte[]) arrs = GetNeighbours(ImageBytes, decompressedImage, 51, index);
+                            byte[] arr1 = arrs.Item1, arr2 = arrs.Item2;
+                        }
+                        MessageBox.Show($"Исходные данные и распакованные данные {(areEqual ? "совпадают" : "не совпадают")}");
                     }
-                    MessageBox.Show($"Исходные данные и распакованные данные {(areEqual ? "совпадают" : "не совпадают")}");
+                }
+                else
+                {
+                    ImageBytes = decompressedImage;
                 }
                 DrawImage(decompressedImage, CompressedPicture);
+                SaveButton.Enabled = true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
         }
-
+        private void SetDecompressedResult(long decompressionTime)
+        {
+            ResultTextBox.Text += $"Время восстановления: {decompressionTime} мс\r\n";
+        }
         private bool AreArraysEqual(byte[] arr1, byte[] arr2)
         {
             if (arr1.Length != arr2.Length)
@@ -226,7 +284,6 @@ namespace ImageCompression.WinForms
 
             return true;
         }
-
         private int FirstNotEqualIndex(byte[] arr1, byte[] arr2)
         {
             int i = -1;
@@ -236,7 +293,6 @@ namespace ImageCompression.WinForms
             }
             return -1;
         }
-
         private (byte[], byte[]) GetNeighbours(byte[] arr1, byte[] arr2, int count, int index)
         {
             int startIndex = index - count / 2;
@@ -247,6 +303,26 @@ namespace ImageCompression.WinForms
                 arrs.Item2[i] = arr2[startIndex];
             }
             return arrs;
+        }
+        #endregion <--- Compression --->
+
+        private void AlgorithmsComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // Преобразуйте sender в ComboBox, чтобы получить выбранный элемент
+            ComboBox comboBox = (ComboBox)sender;
+
+            // Получите выбранный элемент перечисления
+            Algorithm selectedAlgorithm = (Algorithm)comboBox.SelectedItem;
+
+            switch (selectedAlgorithm)
+            {
+                case Algorithm.RLE:
+                    CurrentAlgorithm = new RunLengthEncoding(3);
+                    break;
+                default:
+                    MessageBox.Show("Алгоритм не реализован");
+                    break;
+            }
         }
     }
 }
