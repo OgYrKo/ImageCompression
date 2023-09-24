@@ -23,24 +23,28 @@ namespace ImageCompression.Algorithms
             ArraysCount = arraysCount;
         }
 
+        #region <--- Compression --->
+        /// <summary>
+        /// Сжатие данных 
+        /// </summary>
+        /// <param name="byteArray">Массив байт для сжатия</param>
+        /// <returns>Сжатый массив байт</returns>
+        /// <exception cref="ArgumentException"></exception>
         public byte[] Compress(byte[] byteArray)
         {
-            if (byteArray == null || byteArray.Length == 0)
-            {
-                throw new ArgumentException("Недопустимые параметры.");
-            }
-
+            CheckNull(byteArray);
             int inputLength = byteArray.Length;
-
-            if (ArraysCount <= 0 || inputLength % ArraysCount != 0)
+            if (ArraysCount <= 0 || inputLength % ArraysCount != 0||ArraysCount>inputLength)
             {
                 throw new ArgumentException("Недопустимое количество массивов для разделения.");
             }
 
             int subArrayLength = inputLength / ArraysCount;
-            byte[][] result = new byte[ArraysCount][];
+            List<byte>[] result = new List<byte>[ArraysCount];
+            
             Parallel.For(0, ArraysCount, i =>
             {
+                
                 byte[] subArray = new byte[subArrayLength];
                 for (int j = 0; j < subArrayLength; j++)
                 {
@@ -48,65 +52,223 @@ namespace ImageCompression.Algorithms
                 }
                 result[i] = CompressBytes(subArray);
             });
-            return CombineCompressionArrays(result);
+
+
+            byte[] finish = CombineCompressionArrays(result);
+            return finish;
         }
 
-        private byte[] CombineCompressionArrays(byte[][] bytes)
+        /// <summary>
+        /// Сжимает переданный массив байтов по алгоритму RLE
+        /// </summary>
+        /// <param name="byteArray">Массив байтов для сжатия</param>
+        /// <returns>Список сжатых байтов по алгоритму RLE</returns>
+        private List<byte> CompressBytes(byte[] byteArray)
         {
-            List<byte>[] results = new List<byte>[bytes.Length];
+            CheckNull(byteArray);
+            List<byte> countedSequance = CountSequances(byteArray);
+            return JoinSingleSequance(countedSequance);
+        }
 
-            Parallel.For(0, bytes.Length, arrayIndex =>
+        /// <summary>
+        /// Подсчитывает количество элементов в каждой последовательности массива
+        /// </summary>
+        /// <param name="byteArray">Массив байтов для сжатия</param>
+        /// <returns>Список байтов вида: количесто, элемент</returns>
+        private List<byte> CountSequances(byte[] byteArray)
+        {
+           
+            List<byte> result = new List<byte>();
+            List<byte> sequence = new List<byte>();
+            byte previous = byteArray[0];
+            byte current;
+            for (int i = 1; i < byteArray.Length; i++)
             {
-                results[arrayIndex] = new List<byte>(bytes[arrayIndex].Length);
-                int times = bytes[arrayIndex].Length / byte.MaxValue;
-                int count = bytes[arrayIndex].Length % byte.MaxValue;
-
-                for (int j = 0; j < times; j++)
+                current = byteArray[i];
+                sequence.Add(previous);
+                if (previous != current)
                 {
-                    results[arrayIndex].Add(byte.MaxValue);
-                    for(int i = 0; i < byte.MaxValue; i++)
-                    {
-                        results[arrayIndex].Add(bytes[arrayIndex][j * byte.MaxValue+i]);
-                    }
+                    
+                    SaveSequance(ref result, sequence);
+                    sequence.Clear();
                 }
-                if (count != 0)
-                {
-                    results[arrayIndex].Add((byte)count);
-                    for (int i = 0; i < count; i++)
-                    {
-                        results[arrayIndex].Add(bytes[arrayIndex][times * byte.MaxValue + i]);
-                    }
-                }
-                results[arrayIndex].Add(0);
-            });
-
-            int totalBytes = results.Sum(arr => arr.Count);
-            IEnumerable<byte> result = new List<byte>(totalBytes)
-            {
-                (byte)bytes.Length
-            };
-            
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                result = result.Concat(results[i]);
+                previous = current;
             }
+            sequence.Add(previous);
+            SaveSequance(ref result, sequence);
+
             
-            return result.ToArray();
+            return result;
         }
 
-        private byte[] CombineDecompressionArrays(byte[][] bytes)
+        /// <summary>
+        /// Сжатие последовательности в массиве
+        /// </summary>
+        /// <param name="result">Сжатая последовательность байт вида: количество, элемент</param>
+        /// <param name="sequance">Последовательность байт в массиве</param>
+        private void SaveSequance(ref List<byte> result, List<byte> sequance)
         {
-            byte[] result = new byte[bytes.Length * bytes[0].Length];
-            for (int i = 0; i < bytes[0].Length; i++)
+            int count = sequance.Count;
+            byte value = sequance[0];
+            if (count > MaxCount)
             {
-                for(int j=0; j < bytes.Length; j++)
+                int times = count / MaxCount;
+                count = count % MaxCount;
+                for (int i = 0; i < times; i++)
                 {
-                    result[i * bytes.Length + j] = bytes[j][i];
+                    result.Add(TransformNumberToRepeatedCounter(MaxCount));
+                    result.Add(value);
+                }
+            }
+            if (count == 0) return;
+
+            if (count == 1)
+                result.Add(TransformNumberToNotRepeatedCounter((byte)count));
+            else
+                result.Add(TransformNumberToRepeatedCounter((byte)count));
+
+            result.Add(value);
+        }
+
+        /// <summary>
+        /// Соеденяет еденичные элементы в одну последовательность
+        /// </summary>
+        /// <param name="byteArray">Список байтов вида: количесто, элемент</param>
+        /// <returns>Список байтов по алгоритму RLE</returns>
+        private List<byte> JoinSingleSequance(List<byte> byteArray)
+        {
+            List<byte> result = new List<byte>();
+
+            int seqIndex = -1;
+            for (int i = 0; i < byteArray.Count; i += 2)
+            {
+                if (byteArray[i] == 0)
+                {
+                    AddNotRepeatedSequance(ref result, byteArray[i + 1], ref seqIndex);
+                }
+                else
+                {
+                    AddRepeatedSequance(ref result, byteArray[i], byteArray[i + 1], ref seqIndex);
                 }
             }
             return result;
         }
 
+        /// <summary>
+        /// Добавляет элемент в последовательность без повторений элемента
+        /// </summary>
+        /// <param name="result">Список в который сохраняются данные</param>
+        /// <param name="count">Количество повторяющихся элементов</param>
+        /// <param name="counterIndex">Счетчик</param>
+        private void AddNotRepeatedSequance(ref List<byte> result, byte value, ref int counterIndex)
+        {
+            if (counterIndex != -1 && result[counterIndex] != FlagSize - 1)
+            {
+                result[counterIndex]++;
+            }
+            else
+            {
+                counterIndex = result.Count;
+                result.Add(0);
+            }
+            result.Add(value);
+        }
+
+        /// <summary>
+        /// Добавляет элемент в последовательность с повторением элемента
+        /// </summary>
+        /// <param name="result">Список в который сохраняются данные</param>
+        /// <param name="count">Количество повторяющихся элементов</param>
+        /// <param name="value">Значение повторяющихся элементов</param>
+        /// <param name="counterIndex">Счетчик</param>
+        private void AddRepeatedSequance(ref List<byte> result, byte count, byte value, ref int counterIndex)
+        {
+            counterIndex = -1;
+            result.Add(count);
+            result.Add(value);
+        }
+
+        /// <summary>
+        /// Соединение разделенных массивов для записи в файл
+        /// </summary>
+        /// <param name="bytes">Список сжатых массивов по RLE</param>
+        /// <returns>Сжатый массив байтов для файла</returns>
+        private byte[] CombineCompressionArrays(List<byte>[] bytes)
+        {
+            List<byte>[] results = new List<byte>[bytes.Length];
+
+            Parallel.For(0, bytes.Length, arrayIndex =>
+            {
+                results[arrayIndex] = new List<byte>(bytes[arrayIndex].Count);
+                int times = bytes[arrayIndex].Count / byte.MaxValue;
+                byte count = (byte)(bytes[arrayIndex].Count % byte.MaxValue);
+
+                for (int j = 0; j < times; j++)
+                {
+                    SetFileSequanceForOneDimension(ref results[arrayIndex], ref bytes[arrayIndex], byte.MaxValue, j);
+                }
+                if (count != 0)
+                {
+                    SetFileSequanceForOneDimension(ref results[arrayIndex], ref bytes[arrayIndex], count, times);
+                }
+                results[arrayIndex].Add(0);
+            });
+
+            int totalBytes = results.Sum(arr => arr.Count);
+            byte[] result = new byte[totalBytes+1];
+            result[0] = (byte)bytes.Length;
+            for (int i = 0, index = 1; i < results.Length; i++)
+            {
+                for (int j = 0; j < results[i].Count; j++, index++)
+                {
+                    result[index] = results[i][j];
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Создает последовательность для записи в файл для одного из разделенных массивов данных
+        /// </summary>
+        /// <param name="result">Список, в который записывается результат</param>
+        /// <param name="bytes">Список сжатых байтов</param>
+        /// <param name="count">Количество элементов для записи</param>
+        /// <param name="offset">Смещение от начала списка сжатых байт</param>
+        private void SetFileSequanceForOneDimension(ref List<byte> result, ref List<byte> bytes, byte count, int offset)
+        {
+            result.Add(count);
+            for (int i = 0; i < count; i++)
+            {
+                result.Add(bytes[offset * byte.MaxValue + i]);
+            }
+        }
+        private byte TransformNumberToRepeatedCounter(byte count) => (byte)(FlagSize + count - 1);
+        private byte TransformNumberToNotRepeatedCounter(byte count) => (byte)(count - 1);
+        #endregion <--- Compression --->
+
+        #region <--- Decompression --->
+        /// <summary>
+        /// Преобразовывает сжатые данные в данные без сжатия
+        /// </summary>
+        /// <param name="byteArray">Массив сжатых данных из файла</param>
+        /// <returns>Массив байтов без сжатия</returns>
+        public byte[] Decompress(byte[] byteArray)
+        {
+            CheckNull(byteArray);
+            byte[][] arrays = SplitCompressionArray(byteArray);
+            byte[][] result = new byte[arrays.Length][];
+            Parallel.For(0, arrays.Length, i =>
+            {
+                result[i] = DecompressBytes(arrays[i]);
+            });
+            return CombineDecompressionArrays(result);
+        }
+
+        /// <summary>
+        /// Делит сжатый массив данных из файла на необходимое количество массивов (использующееся при сжатии)
+        /// </summary>
+        /// <param name="bytes">Массив сжатых данных из файла</param>
+        /// <returns>Необходимое количесвто сжатых массивов за алгоритмом RLE</returns>
         private byte[][] SplitCompressionArray(byte[] bytes)
         {
             int arraysCount = bytes[0];
@@ -126,167 +288,49 @@ namespace ImageCompression.Algorithms
                 }
                 result[arrayIndex] = listResult.ToArray();
             }
-
             return result;
         }
-        private byte[] CompressBytes(byte[] byteArray)
-        {
-            if (byteArray == null || byteArray.Length == 0)
-            {
-                throw new ArgumentException("Недопустимые параметры.");
-            }
 
-            List<byte> countedSequance = CountSequances(byteArray);
-            return JoinSingleSequance(countedSequance);
-        }
-        public byte[] Decompress(byte[] byteArray)
-        {
-            if (byteArray == null || byteArray.Length == 0)
-            {
-                throw new ArgumentException("Недопустимые параметры.");
-            }
-
-            byte[][] arrays = SplitCompressionArray(byteArray);
-            byte[][] result = new byte[arrays.Length][];
-            Parallel.For(0, arrays.Length, i =>
-            {
-                result[i] = DecompressBytes(arrays[i]);
-            });
-
-            return CombineDecompressionArrays(result);
-        }
+        /// <summary>
+        /// Преобразовывает сжатые байты в обычную последовательность
+        /// </summary>
+        /// <param name="compressedImage">Массив сжатых байтов</param>
+        /// <returns>Массив байтов без сжатия</returns>
         private byte[] DecompressBytes(byte[] compressedImage)
         {
-            if (compressedImage == null || compressedImage.Length == 0 || compressedImage.Length == 1)
-            {
-                throw new ArgumentException("Недопустимые параметры.");
-            }
-
             List<byte> decompressedData = new List<byte>();
             for (int i = 0; i < compressedImage.Length; i++)
             {
-
                 if (IsRepeatedCounter(compressedImage[i]))
                 {
-                    byte count = TransformRepeatedCountToNumber(compressedImage[i]);
-                    DecompressRepeatedSequence(ref decompressedData, compressedImage, ref i, count + 1);
+                    DecompressRepeatedSequence(ref decompressedData, compressedImage, ref i, TransformRepeatedCountToNumber(compressedImage[i]));
                 }
                 else
                 {
-                    DecompressNotRepeatedSequence(ref decompressedData, compressedImage, ref i, compressedImage[i] + 1);
+                    DecompressNotRepeatedSequence(ref decompressedData, compressedImage, ref i, TransformNotRepeatedCountToNumber(compressedImage[i]));
                 }
             }
-
             return decompressedData.ToArray();
         }
-        private List<byte> CountSequances(byte[] byteArray)
-        {
-            List<byte> result = new List<byte>();
-            List<byte> sequence = new List<byte>();
-            byte previous = byteArray[0];
-            byte current;
-            for (int i = 1; i < byteArray.Length; i++)
-            {
-                current = byteArray[i];
-                sequence.Add(previous);
-                if (previous != current)
-                {
-                    SaveSequance(ref result, sequence);
-                    sequence = new List<byte>();
-                }
-                previous = current;
-            }
-            sequence.Add(previous);
-            SaveSequance(ref result, sequence);
 
+        /// <summary>
+        /// Объеденяет поделеные массивы в один
+        /// </summary>
+        /// <param name="bytes">Массив массивов байт, на которые был поделен файл</param>
+        /// <returns>Первоначальную последовательность байт</returns>
+        private byte[] CombineDecompressionArrays(byte[][] bytes)
+        {
+            byte[] result = new byte[bytes.Length * bytes[0].Length];
+            for (int i = 0; i < bytes[0].Length; i++)
+            {
+                for (int j = 0; j < bytes.Length; j++)
+                {
+                    result[i * bytes.Length + j] = bytes[j][i];
+                }
+            }
             return result;
         }
-        private bool IsRpeatedSequance(List<byte> result)
-        {
-            if (result.Count == 1) return false;
-            return result[0] == result[1];
-        }
-        private void SaveSequance(ref List<byte> result, List<byte> sequance)
-        {
-            if (IsRpeatedSequance(sequance)) SaveRepeatedSequance(ref result, sequance.Count, sequance[0]);
-            else SaveNotRepeatedSequance(ref result, sequance);
-        }
-        private byte[] JoinSingleSequance(List<byte> byteArray)
-        {
-            List<byte> result = new List<byte>();
 
-            int seqIndex = -1;
-            for (int i = 0; i < byteArray.Count; i += 2)
-            {
-                if (byteArray[i] == 0)
-                {
-                    AddNotRepeatedSequance(ref result, byteArray[i + 1], ref seqIndex);
-                }
-                else
-                {
-                    seqIndex = -1;
-                    result.Add(byteArray[i]);
-                    result.Add(byteArray[i + 1]);
-                }
-            }
-
-
-            return result.ToArray();
-        }
-        private void AddNotRepeatedSequance(ref List<byte> result, byte value, ref int counterIndex)
-        {
-            if (counterIndex != -1 && result[counterIndex] != FlagSize - 1)
-            {
-                result[counterIndex]++;
-            }
-            else
-            {
-                counterIndex = result.Count;
-                result.Add(0);
-            }
-            result.Add(value);
-        }
-        /// <summary>
-        /// Сжатие последовательности повторяющихся элементов
-        /// </summary>
-        /// <param name="result">Список для сжатых последовательностей</param>
-        /// <param name="count">Количество повторяющихся элементов</param>
-        /// <param name="value">Повторяющийся элемент</param>
-        private void SaveRepeatedSequance(ref List<byte> result, int count, byte value)
-        {
-            if (count > MaxCount)
-            {
-                int times = count / MaxCount;
-                count = count % MaxCount;
-                for (int i = 0; i < times; i++)
-                {
-                    result.Add(TransformNumberToRepeatedCounter(MaxCount));
-                    result.Add(value);
-                }
-            }
-            if (count == 0)
-                return;
-            if (count == 1)
-                result.Add((byte)(count - 1));
-            else
-                result.Add(TransformNumberToRepeatedCounter((byte)count));
-
-
-            result.Add(value);
-        }
-        /// <summary>
-        /// Сжатие последовательности неповторяющихся элементов
-        /// </summary>
-        /// <param name="result">Список для сжатых последовательностей</param>
-        /// <param name="array">Массив неповторяющихся элементов</param>
-        private void SaveNotRepeatedSequance(ref List<byte> result, List<byte> array)
-        {
-            result.Add(0);
-            result.Add(array[0]);
-        }
-        private byte TransformNumberToRepeatedCounter(byte count) => (byte)(FlagSize + count - 1);
-        private byte TransformRepeatedCountToNumber(byte imageByte) => (byte)(imageByte - FlagSize);
-        private bool IsRepeatedCounter(byte num) => num > FlagSize;
         /// <summary>
         /// Превращает сжатое значение в последовательность повторяющихся элементов
         /// </summary>
@@ -296,6 +340,7 @@ namespace ImageCompression.Algorithms
         /// <param name="count">Количество элементов последовательности</param>
         private void DecompressRepeatedSequence(ref List<byte> result, in byte[] compressedArray, ref int currentIndex, int count)
             => DecompressSequence(ref result, compressedArray, ref currentIndex, count, true);
+
         /// <summary>
         /// Превращает сжатое значение в последовательность неповторяющихся элементов
         /// </summary>
@@ -305,6 +350,7 @@ namespace ImageCompression.Algorithms
         /// <param name="count">Количество элементов последовательности</param>
         private void DecompressNotRepeatedSequence(ref List<byte> result, in byte[] compressedArray, ref int currentIndex, int count)
             => DecompressSequence(ref result, compressedArray, ref currentIndex, count);
+
         /// <summary>
         /// Превращает сжатое значение в последовательность
         /// </summary>
@@ -321,6 +367,18 @@ namespace ImageCompression.Algorithms
             {
                 currentIndex += offset;
                 result.Add(compressedArray[currentIndex]);
+            }
+        }
+        private byte TransformRepeatedCountToNumber(byte imageByte) => (byte)(imageByte - FlagSize + 1);
+        private byte TransformNotRepeatedCountToNumber(byte imageByte) => (byte)(imageByte + 1);
+        private bool IsRepeatedCounter(byte num) => num > FlagSize;
+        #endregion <--- Decompression --->
+
+        private void CheckNull(byte[] byteArray)
+        {
+            if (byteArray == null || byteArray.Length == 0)
+            {
+                throw new ArgumentException("Недопустимые параметры.");
             }
         }
     }
