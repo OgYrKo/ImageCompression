@@ -22,6 +22,23 @@ namespace ImageCompression.WinForms
             CurrentAlgorithm = new RunLengthEncoding(3);
         }
 
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            // Добавление обработчика события для контекстного меню PictureBox
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem copyMenuItem = new MenuItem("Копировать");
+            MenuItem pasteMenuItem = new MenuItem("Вставить");
+            copyMenuItem.Click += CopyMenuItem_Click;
+            pasteMenuItem.Click += PasteMenuItem_Click;
+            contextMenu.MenuItems.Add(copyMenuItem);
+            contextMenu.MenuItems.Add(pasteMenuItem);
+            UncompressedPicture.ContextMenu = contextMenu;
+
+            // Добавление обработчика события для горячих клавиш Ctrl+C и Ctrl+V
+            UncompressedPicture.KeyDown += UncompressedPicture_KeyDown;
+        }
+        
+
         #region <--- Work with file --->
         private byte[] ReadBMPFile(string filePath)
         {
@@ -61,7 +78,12 @@ namespace ImageCompression.WinForms
         }
         private void OpenButton_Click(object sender, EventArgs e)
         {
-            ImageBytes = OpenFile(BMPFilter);
+            LoadNewImage(OpenFile(BMPFilter));
+        }
+
+        private void LoadNewImage(byte[] image)
+        {
+            ImageBytes = image;
             if (ImageBytes == null)
                 MessageBox.Show("Ошибка открытия файла");
             else
@@ -80,9 +102,13 @@ namespace ImageCompression.WinForms
             CompressedImageBytes = OpenFile(BinFilter);
             if (CompressedImageBytes == null)
                 MessageBox.Show("Ошибка открытия файла");
+            PictureDispose(CompressedPicture);
+            PictureDispose(UncompressedPicture);
             CompressionButton.Enabled = false;
+            SaveButton.Enabled = false;
             DecompressButton.Enabled = true;
             SaveCompressedFileButton.Enabled = true;
+
         }
         private void SaveFile(byte[] bytesToSave, string filter)
         {
@@ -120,6 +146,20 @@ namespace ImageCompression.WinForms
         {
             SaveFile(CompressedImageBytes, BinFilter);
         }
+        private void CopyMenuItem_Click(object sender, EventArgs e)
+        {
+            if (((PictureBox)sender).Image != null)
+            {
+                Clipboard.SetImage(GetImageFromBytes(ImageBytes));
+            }
+        }
+        private void PasteMenuItem_Click(object sender, EventArgs e)
+        {
+            if (Clipboard.ContainsImage())
+            {
+                LoadNewImage(GetBytesFromImage(Clipboard.GetImage()));
+            }
+        }
         #endregion <--- Work with file --->
 
         #region <--- Picture Drawing -->
@@ -140,6 +180,14 @@ namespace ImageCompression.WinForms
                 // Обработка ошибок создания изображения
                 MessageBox.Show("Ошибка создания изображения из массива байтов: " + ex.Message);
                 return null;
+            }
+        }
+        private static byte[] GetBytesFromImage(Image image)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                image.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp); // Можете выбрать другой формат, если нужно
+                return stream.ToArray();
             }
         }
         private void DrawImage(byte[] bytes, PictureBox pictureBox)
@@ -214,6 +262,7 @@ namespace ImageCompression.WinForms
                 stopwatch.Stop();
                 SetCompressionResult(ImageBytes.LongLength, CompressedImageBytes.LongLength, stopwatch.ElapsedMilliseconds);
                 DecompressButton.Enabled = true;
+                SaveCompressedFileButton.Enabled = true;
             }
             catch (Exception ex)
             {
@@ -305,7 +354,18 @@ namespace ImageCompression.WinForms
             return arrs;
         }
         #endregion <--- Compression --->
-
+        
+        private void UncompressedPicture_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.C)
+            {
+                CopyMenuItem_Click(sender, e);
+            }
+            else if (e.Control && e.KeyCode == Keys.V)
+            {
+                PasteMenuItem_Click(sender, e);
+            }
+        }
         private void AlgorithmsComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             // Преобразуйте sender в ComboBox, чтобы получить выбранный элемент

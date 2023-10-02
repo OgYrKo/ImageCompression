@@ -110,7 +110,7 @@
             this.fileToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1324, 28);
+            this.menuStrip1.Size = new System.Drawing.Size(1324, 30);
             this.menuStrip1.TabIndex = 6;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -122,7 +122,7 @@
             this.SaveButton,
             this.SaveCompressedFileButton});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(46, 24);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(46, 26);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // OpenButton
@@ -147,10 +147,10 @@
             this.SaveButton.Text = "Save As...";
             this.SaveButton.Click += new System.EventHandler(this.SaveButton_Click);
             // 
-            // SaveCompressedFile
+            // SaveCompressedFileButton
             // 
             this.SaveCompressedFileButton.Enabled = false;
-            this.SaveCompressedFileButton.Name = "SaveCompressedFile";
+            this.SaveCompressedFileButton.Name = "SaveCompressedFileButton";
             this.SaveCompressedFileButton.Size = new System.Drawing.Size(241, 26);
             this.SaveCompressedFileButton.Text = "Save Compressed File";
             this.SaveCompressedFileButton.Click += new System.EventHandler(this.SaveCompressedFile_Click);
@@ -173,6 +173,7 @@
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
+            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.UncompressedPicture)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.CompressedPicture)).EndInit();
             this.menuStrip1.ResumeLayout(false);
