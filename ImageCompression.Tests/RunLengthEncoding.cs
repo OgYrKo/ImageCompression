@@ -414,14 +414,12 @@ namespace ImageCompression.Tests
         public void CheckCompression(byte[] uncompressedExpected, byte[] compressedExpected, IAlgorithm algorithm)
         {
             byte[] compressedActual = algorithm.Compress(uncompressedExpected);
-            //CollectionAssert.AreEquivalent(compressedExpected, compressedActual, "Compression failed");
             CollectionAssert.AreEqual(compressedExpected, compressedActual, "Compression failed");
         }
 
         public void CheckDecompression(byte[] uncompressedExpected, byte[] compressedExpected, IAlgorithm algorithm)
         {
             byte[] uncompressedActual = algorithm.Decompress(compressedExpected);
-            //CollectionAssert.AreEquivalent(uncompressedExpected, uncompressedActual, "Decompression failed");
             CollectionAssert.AreEqual(uncompressedExpected, uncompressedActual, "Decompression failed");
         }
     }

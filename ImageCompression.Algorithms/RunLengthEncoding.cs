@@ -207,7 +207,7 @@ namespace ImageCompression.Algorithms
                 {
                     SetFileSequanceForOneDimension(ref results[arrayIndex], ref bytes[arrayIndex], byte.MaxValue, j);
                 }
-                if (count != 0)
+                if (count != 0) 
                 {
                     SetFileSequanceForOneDimension(ref results[arrayIndex], ref bytes[arrayIndex], count, times);
                 }
