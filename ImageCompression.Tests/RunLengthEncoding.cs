@@ -1,6 +1,7 @@
 ﻿using ImageCompression.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RLE = ImageCompression.Algorithms.RunLengthEncoding;
+using static ImageCompression.Tests.CheckArrays;
 
 namespace ImageCompression.Tests
 {
@@ -15,7 +16,7 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 1 };
             byte[] compressedExpected = new byte[] { 1, 2, 0, 1, 0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -23,7 +24,7 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 1, 1 };
             byte[] compressedExpected = new byte[] { 1,2,129, 1,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -31,21 +32,21 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 1, 2 };
             byte[] compressedExpected = new byte[] {1,3, 1, 1, 2,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
         [TestMethod]
         public void ThreeNotSimilarBytes()
         {
             byte[] uncompressedExpected = new byte[] { 1, 2, 3 };
             byte[] compressedExpected = new byte[] {1,4, 2,1, 2, 3,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
         [TestMethod]
         public void RGBByOneBytes()
         {
             byte[] uncompressedExpected = new byte[] { 1, 2, 3 };
             byte[] compressedExpected = new byte[] { 3, 2, 0,1,0,2,0,2,0,2,0,3,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, AlgorithmRGB);
+            Check(uncompressedExpected, compressedExpected, AlgorithmRGB);
         }
 
         [TestMethod]
@@ -58,7 +59,7 @@ namespace ImageCompression.Tests
                                                      130,2,
                                                      0, 4,
                                                      2,3,5,7,0};
-            CheckArrays(uncompressedExpected, compressedExpected, AlgorithmRGB);
+            Check(uncompressedExpected, compressedExpected, AlgorithmRGB);
         }
 
         [TestMethod]
@@ -66,14 +67,14 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 2, 2, 2 };
             byte[] compressedExpected = new byte[] { 1,2, 130, 2,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
         [TestMethod]
         public void FourNotSimilarBytes()
         {
             byte[] uncompressedExpected = new byte[] { 1, 2, 3, 4 };
             byte[] compressedExpected = new byte[] {1,5,3, 1, 2, 3, 4,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -81,7 +82,7 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 2, 2, 2, 2 };
             byte[] compressedExpected = new byte[] {1,2, 131, 2,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -89,7 +90,7 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 1, 2, 2, 3 };
             byte[] compressedExpected = new byte[] {1,6, 0, 1, 129, 2,0, 3,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -97,7 +98,7 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 1, 2, 2, 2, 2, 3, 4, 5, 1, 1, 1, 1 };
             byte[] compressedExpected = new byte[] {1,10, 0, 1, 131, 2,2, 3, 4, 5, 131, 1,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -105,7 +106,7 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 1, 2, 2, 2, 2, 3, 4, 5, 1, 1, 1, 1, 2, 3 };
             byte[] compressedExpected = new byte[] {1,13, 0, 1, 131, 2, 2, 3, 4, 5, 131, 1,1, 2, 3,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -113,7 +114,7 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 1, 2, 2, 2, 2, 3, 4, 5, 1, 1, 1, 1, 2, 3, 4, 4, 4, 4 };
             byte[] compressedExpected = new byte[] {1,15, 0, 1, 131, 2,2, 3, 4, 5, 131, 1, 1, 2, 3, 131, 4,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -121,7 +122,7 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 3, 4, 4, 4, 4 };
             byte[] compressedExpected = new byte[] {1,11, 0, 1, 131, 2, 131, 1, 1, 2, 3, 131, 4,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -137,7 +138,7 @@ namespace ImageCompression.Tests
         {
             byte[] uncompressedExpected = new byte[] { 255,252,252,255,251,251,255,250,247,255,248,245,254,243,240,250,243,237};
             byte[] compressedExpected = new byte[] {1,21, 0,255,129, 252,0,255,129,251,11,255,250,247,255,248,245,254,243,240,250,243,237,0};
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -157,7 +158,7 @@ namespace ImageCompression.Tests
                                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //120
                                                        1, 1, 1, 1, 1, 1, 1, 1, 1 };
             byte[] compressedExpected = new byte[] {1,4, 255, 1, 0, 1,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -193,7 +194,7 @@ namespace ImageCompression.Tests
                                                        1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //120
                                                        1, 2, 1, 2, 1, 2, 1, 2,       //128
                                                        1, 1, 2, 136, 1,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
 
         [TestMethod]
@@ -368,7 +369,7 @@ namespace ImageCompression.Tests
                                                        1, 2, 1, 2, 1, 2, 1, 2, 1, 2, //120
                                                        1, 2, 1, 2, 1,                //125
                                                        0};
-            CheckArrays(uncompressedExpected, compressedExpected, AlgorithmRGB);
+            Check(uncompressedExpected, compressedExpected, AlgorithmRGB);
         }
 
         [TestMethod]
@@ -402,25 +403,7 @@ namespace ImageCompression.Tests
                                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //260
                                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
             byte[] compressedExpected = new byte[] {1,6, 255, 1, 255, 1,141,1,0 };
-            CheckArrays(uncompressedExpected, compressedExpected, Algorithm);
-        }
-
-        public void CheckArrays(byte[] uncompressedExpected, byte[] compressedExpected, IAlgorithm algorithm)
-        {
-            CheckCompression(uncompressedExpected, compressedExpected,algorithm);
-            CheckDecompression(uncompressedExpected, compressedExpected, algorithm);
-        }
-
-        public void CheckCompression(byte[] uncompressedExpected, byte[] compressedExpected, IAlgorithm algorithm)
-        {
-            byte[] compressedActual = algorithm.Compress(uncompressedExpected);
-            CollectionAssert.AreEqual(compressedExpected, compressedActual, "Compression failed");
-        }
-
-        public void CheckDecompression(byte[] uncompressedExpected, byte[] compressedExpected, IAlgorithm algorithm)
-        {
-            byte[] uncompressedActual = algorithm.Decompress(compressedExpected);
-            CollectionAssert.AreEqual(uncompressedExpected, uncompressedActual, "Decompression failed");
+            Check(uncompressedExpected, compressedExpected, Algorithm);
         }
     }
 }

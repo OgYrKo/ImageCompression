@@ -49,8 +49,10 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CheckArrays.cs" />
     <Compile Include="RunLengthEncoding.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="LempelZivWelch.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -59,6 +61,10 @@
     <ProjectReference Include="..\ImageCompression.Algorithms\ImageCompression.Algorithms.csproj">
       <Project>{831b8cf9-f435-46ae-b76f-0384237c0c2e}</Project>
       <Name>ImageCompression.Algorithms</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ImageCompression.Common\ImageCompression.Common.csproj">
+      <Project>{EF0E1D6E-37D9-46E2-8C95-D01757F3B1F4}</Project>
+      <Name>ImageCompression.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\ImageCompression.Interfaces\ImageCompression.Interfaces.csproj">
       <Project>{e21dcacb-4696-4c76-811a-ba616be10744}</Project>

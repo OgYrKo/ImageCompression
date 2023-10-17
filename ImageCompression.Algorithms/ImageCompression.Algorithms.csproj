@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ImageCompression.Common\ImageCompression.Common.csproj" />
     <ProjectReference Include="..\ImageCompression.Interfaces\ImageCompression.Interfaces.csproj" />
   </ItemGroup>
 
