@@ -19,13 +19,13 @@ namespace ImageCompression.Tests
         static public void CheckCompression(byte[] uncompressedExpected, byte[] compressedExpected, IAlgorithm algorithm)
         {
             byte[] compressedActual = algorithm.Compress(uncompressedExpected);
-            CollectionAssert.AreEqual(compressedExpected, compressedActual, "Compression failed");
+            CollectionAssert.AreEqual(compressedExpected, compressedActual, $"Compression failed.\nExpected: {string.Join(" ", compressedExpected)}\nActual: {string.Join(" ", compressedActual)}\n");
         }
 
         static public void CheckDecompression(byte[] uncompressedExpected, byte[] compressedExpected, IAlgorithm algorithm)
         {
             byte[] uncompressedActual = algorithm.Decompress(compressedExpected);
-            CollectionAssert.AreEqual(uncompressedExpected, uncompressedActual, "Decompression failed");
+            CollectionAssert.AreEqual(uncompressedExpected, uncompressedActual, $"Decompression failed.\nExpected: {string.Join(" ", uncompressedExpected)}\nActual: {string.Join(" ", uncompressedActual)}\n");
         }
     }
 }

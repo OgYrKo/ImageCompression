@@ -4,6 +4,7 @@ using ImageCompression.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using static ImageCompression.Tests.CheckArrays;
 using System.IO;
 using LZW = ImageCompression.Algorithms.LempelZivWelch;
 
@@ -14,32 +15,34 @@ namespace ImageCompression.Tests
     {
         LZW Algorithm = new LZW();
 
+        //[TestMethod]
+        //public void DecompressedTrap()
+        //{
+        //    string str = "JOEYNJOEYNJOEY";
+        //}
 
         [TestMethod]
-        public void TestCommonLZW()
+        public void TestCompressionOne()
         {
-
-            string str = "/WED/WE/WEE/WEB/WET";
-            string[] compressedExpected = new string[] 
-            {
-                "256","/","W","E","D","258","E","262","263","259","B","262"
-            };
-            CheckString(str,compressedExpected);
+            byte[] input = new byte[] { 1 };
+            byte[] expected = new byte[] { 0b_10000000, 0b_0_0000000,0b_01_100000,0b_001_00000 };//256,1,257
+            CheckCompression(input, expected, Algorithm);
         }
 
         [TestMethod]
-        public void Compressed()
+        public void TestCompressionTwo()
         {
-            byte[] uncompressedExpected = new byte[] { 45, 55, 55, 151, 55, 55, 55 };
-            List<ushort> compressedExpected = new List<ushort>() { 256, 45, 55, 55, 151, 259 };
-            List<ushort> compressedActual = Algorithm.CompressChain(uncompressedExpected);
-            CollectionAssert.AreEqual(compressedExpected, compressedActual, "Compression failed");
+            byte[] input = new byte[] { 1,2 };
+            byte[] expected = new byte[] { 0b_10000000, 0b_0_0000000, 0b_01_000000, 0b_010_10000, 0b_0001_0000 };//256,1,2,257
+            CheckCompression(input, expected, Algorithm);
         }
 
         [TestMethod]
-        public void DecompressedTrap()
+        public void TestCompressionWithOneRepeat()
         {
-            string str = "JOEYNJOEYNJOEY";
+            byte[] input = new byte[] { 1, 2,1,2 };
+            byte[] expected = new byte[] { 0b_10000000, 0b_0_0000000, 0b_01_000000, 0b_010_10000, 0b_0010_1000,0b_00001_000 };////256,1,2,258,257
+            CheckCompression(input, expected, Algorithm);
         }
 
         [TestMethod]
@@ -69,21 +72,6 @@ namespace ImageCompression.Tests
             result.Add(LZW.ReadValue(input,ref curent, ref readBitsCount, 10));
             result.Add(LZW.ReadValue(input,ref curent, ref readBitsCount, 6));
         }
-
-
-
-        private void CheckString(string inputStr, string[] compressedExpected)
-        {
-            byte[] uncompressedExpected = Converter.ToBytes(inputStr);
-            byte[] compressed = Algorithm.Compress(uncompressedExpected);
-            string[] compressedActual = Converter.ToStringsMixed(Algorithm.CompressChain(uncompressedExpected).ToArray());
-            byte[] decompressed = Algorithm.Decompress(compressed);
-            string decompressedActual = Algorithm.DecompressChain(compressed);
-            CollectionAssert.AreEqual(compressedExpected, compressedActual, "Compression failed");
-            CollectionAssert.AreEqual(compressedExpected, compressedActual, "Decompression failed");
-        }
-
-
 
         
     }

@@ -24,7 +24,8 @@ namespace ImageCompression.Common.LZW
             Table.Clear();
             for (ushort i = 0; i <= byte.MaxValue; i++)
             {
-                Table.Add(((char)i).ToString(), i);
+                char ch= (char)i;
+                Table.Add(ch.ToString(), i);
             }
             NextCode = 258;
 
