@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace ImageCompression.Common.LZW
 {
-    public class ChainTable
+    public class ChainTable<Key,Value>
     {
-        Dictionary<string, ushort> Table;
+        Dictionary<Key, Value> Table;
         public readonly int MaxChainCount;
         private int CurrentChainLimit { get; set; }
         public byte CurrentChainLimitPower { get; private set; }
@@ -15,7 +16,7 @@ namespace ImageCompression.Common.LZW
 
         public ChainTable(int chainCount)
         {
-            Table = new Dictionary<string, ushort>();
+            Table = new Dictionary<Key, Value>();
             MaxChainCount = chainCount;
         }
 
@@ -25,12 +26,25 @@ namespace ImageCompression.Common.LZW
             for (ushort i = 0; i <= byte.MaxValue; i++)
             {
                 char ch= (char)i;
-                Table.Add(ch.ToString(), i);
+                Add(ch.ToString(), i);
             }
             NextCode = 258;
 
             CurrentChainLimitPower = 9;
             CurrentChainLimit = 512;
+        }
+
+        private void Add(string ch, ushort num)
+        {
+            if (typeof(Key) == typeof(string))
+            {
+                Table.Add((Key)(object)ch, (Value)(object)num); ;
+            }
+            else if (typeof(Value) == typeof(string))
+            {
+                Table.Add((Key)(object)num, (Value)(object)ch.ToString());
+            }
+            else throw new TypeLoadException("Один из параметризированых типов должен быть типом string");
         }
 
         public bool IsOverflow() => Table.Count == MaxChainCount;
@@ -39,7 +53,7 @@ namespace ImageCompression.Common.LZW
             if (IsOverflow()) return false;
             CheckPowerOfTwo();
             ushort value = NextCode++;
-            Table.Add(chain, value);
+            Add(chain, value);
             return true;
         }
 
@@ -52,8 +66,8 @@ namespace ImageCompression.Common.LZW
             }
         }
 
-        public bool Contains(string value) => Table.ContainsKey(value);
-        public ushort this[string key]
+        public bool Contains(Key value) => Table.ContainsKey(value);
+        public Value this[Key key]
         {
             get => Table[key];
             set => Table[key] = value;
