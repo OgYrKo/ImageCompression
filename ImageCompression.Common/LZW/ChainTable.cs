@@ -3,74 +3,58 @@ using System.Collections.Generic;
 
 namespace ImageCompression.Common.LZW
 {
-    public class ChainTable<Key,Value>
+    
+    abstract public class ChainTable<Key,Value>
     {
-        Dictionary<Key, Value> Table;
-        public readonly int MaxChainCount;
-        private int CurrentChainLimit { get; set; }
-        public byte CurrentChainLimitPower { get; private set; }
+        public readonly int MaxChainCount;//максимальное число цепочек в таблице
+        public byte CurrentChainLimitPower { get; private set; }//необходимое количество бит для записи кода
 
-        ushort NextCode;
+        protected Dictionary<Key, Value> Table;
+        protected int CurrentChainLimit { get; set; }//текущее предельное количество цепочек в таблице (связано с CurrentChainLimitPower)
 
-        public ChainTable() : this(4096) { }
+        protected ushort NextCode;//следующий выделяемый код
 
-        public ChainTable(int chainCount)
+        protected ChainTable(int chainCount)
         {
             Table = new Dictionary<Key, Value>();
             MaxChainCount = chainCount;
+            SetLimitsByDefault();
         }
 
-        public void SetTableByDefault()
+        /// <summary>
+        /// Сброс таблицs
+        /// </summary>
+        public void Reset()
         {
             Table.Clear();
-            for (ushort i = 0; i <= byte.MaxValue; i++)
-            {
-                char ch= (char)i;
-                Add(ch.ToString(), i);
-            }
+            AddDefaultValuesToTable();
             NextCode = 258;
+            SetLimitsByDefault();
+        }
 
+        /// <summary>
+        /// Заполнение таблицы значениями по умолчанию
+        /// </summary>
+        protected abstract void AddDefaultValuesToTable();
+
+        private void SetLimitsByDefault()
+        {
             CurrentChainLimitPower = 9;
             CurrentChainLimit = 512;
         }
 
-        private void Add(string ch, ushort num)
-        {
-            if (typeof(Key) == typeof(string))
-            {
-                Table.Add((Key)(object)ch, (Value)(object)num); ;
-            }
-            else if (typeof(Value) == typeof(string))
-            {
-                Table.Add((Key)(object)num, (Value)(object)ch.ToString());
-            }
-            else throw new TypeLoadException("Один из параметризированых типов должен быть типом string");
-        }
-
         public bool IsOverflow() => Table.Count == MaxChainCount;
-        public bool TryAddNewChain(string chain)
-        {
-            if (IsOverflow()) return false;
-            CheckPowerOfTwo();
-            ushort value = NextCode++;
-            Add(chain, value);
-            return true;
-        }
 
-        private void CheckPowerOfTwo()
+        /// <summary>
+        /// Обновление лимитов
+        /// </summary>
+        protected void TryUpdatePowerOfTwo()
         {
             if (CurrentChainLimit == Table.Count)
             {
                 CurrentChainLimit *= 2;
                 CurrentChainLimitPower++;
             }
-        }
-
-        public bool Contains(Key value) => Table.ContainsKey(value);
-        public Value this[Key key]
-        {
-            get => Table[key];
-            set => Table[key] = value;
         }
     }
 }

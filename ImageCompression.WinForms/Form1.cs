@@ -379,6 +379,9 @@ namespace ImageCompression.WinForms
                 case Algorithm.RLE:
                     CurrentAlgorithm = new RunLengthEncoding(3);
                     break;
+                case Algorithm.LZW:
+                    CurrentAlgorithm = new LempelZivWelch();
+                    break;
                 default:
                     MessageBox.Show("Алгоритм не реализован");
                     break;
