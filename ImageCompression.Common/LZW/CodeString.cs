@@ -8,9 +8,9 @@ namespace ImageCompression.Common.LZW
     {
 
         public ushort? Code { get; set; }
-        public char Str { get; set; }
+        public char? Str { get; set; }
 
-        public CodeString(ushort? code, char str)
+        public CodeString(ushort? code, char? str)
         {
             Code = code;
             Str = str;
@@ -22,5 +22,7 @@ namespace ImageCompression.Common.LZW
             if (lhs.Str != rhs.Str) return false;
             return true;
         }
+
+        public bool IsNullable() => Code == null && Str == null;
     }
 }

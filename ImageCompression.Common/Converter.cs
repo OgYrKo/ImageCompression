@@ -76,15 +76,7 @@ namespace ImageCompression.Common
             return byteArray;
         }
 
-        public static ushort[] ToUshorts(CustomBits[] bits)
-        {
-            ushort[] nums = new ushort[bits.Length];
-            for (int i = 0; i < bits.Length; i++)
-            {
-                nums[i] = bits[i].Value;
-            }
-            return nums;
-        }
+        
 
         public static ushort ToUshort(BitArray bitArray)
         {

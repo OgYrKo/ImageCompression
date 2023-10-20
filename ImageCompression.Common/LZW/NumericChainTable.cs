@@ -6,6 +6,7 @@ namespace ImageCompression.Common.LZW
 {
     public class NumericChainTable : ChainTable<CodeString,ushort>
     {
+        
         public NumericChainTable(int chainCount = 4096) : base(chainCount) { }
 
         protected override void AddDefaultValuesToTable()
@@ -26,7 +27,13 @@ namespace ImageCompression.Common.LZW
             return true;
         }
 
+        public bool TryAddNewChain(CodeString key,char c)
+        {
+            return TryAddNewChain(new CodeString(Table[key], c));
+        }
+
         public bool Contains(CodeString key) => Table.ContainsKey(key);
+        public bool Contains(CodeString key, char newChar) => Table.ContainsKey(new CodeString(key.IsNullable()?null:(ushort?)Table[key],newChar));
         public ushort this[CodeString key]
         {
             get => Table[key];

@@ -25,6 +25,23 @@ namespace ImageCompression.Tests
         }
 
         [TestMethod]
+        public void TestCompressionWithTwoNumbers()
+        {
+            byte[] input = new byte[] { 1, 2 };
+            byte[] expected = new byte[] { 0b_10000000, 0b_0_0000000, 0b_01_000000, 0b_010_10000, 0b_0001_0000 };//256,1,2,257
+            CheckCompression(input, expected, Algorithm);
+        }
+
+        [TestMethod]
+        public void TestCompressionWithTwoRepeat()
+        {
+            byte[] input = new byte[] { 1, 2, 1, 2, 1, 2, 1 };//1,2 - 258, 2,1 - 259, 1,2,1 - 260, 2,1,2 - 261 
+            byte[] expected = new byte[] { 0b_10000000, 0b_0_0000000, 0b_01_000000, 0b_010_10000, 0b_0010_1000, 0b_00100_100, 0b_000001_00 };////256,1,2,258,260,267
+
+            CheckCompression(input, expected, Algorithm);
+        }
+
+        [TestMethod]
         public void TestDeompressionOne()
         {
             byte[] input = new byte[] { 1 };
@@ -50,6 +67,8 @@ namespace ImageCompression.Tests
             Check(input, expected, Algorithm);
             //CheckCompression(input, expected, Algorithm);
         }
+
+        
 
         [TestMethod]
         public void TestWithTwoRepeat()
