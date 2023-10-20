@@ -21,31 +21,28 @@ namespace ImageCompression.Algorithms
         public const ushort CodeEndOfInformation = 257;
         const byte BITS_IN_BYTE = 8;
 
-        private void TableInit(ref StringChainTable chainTable)
+        private void TableInit(ref ChainTable<string, ushort> chainTable)
         {
-            chainTable.Reset();
+            chainTable.SetTableByDefault();
         }
-        private void TableInit(ref NumericChainTable chainTable)
+        private void TableInit(ref ChainTable<ushort, string> chainTable)
         {
-            chainTable.Reset();
+            chainTable.SetTableByDefault();
         }
 
         public byte[] Compress(byte[] byteData)
         {
-            NumericChainTable chainTable = new NumericChainTable();
+            ChainTable<string, ushort> chainTable = new ChainTable<string, ushort>();
             TableInit(ref chainTable);
             char[] charData = Converter.ToChars(byteData);
 
             List<byte> result = new List<byte>();
             byte freeBitsCountInLastByte = WriteValue(ref result, ClearCode, 0, chainTable.CurrentChainLimitPower);
 
-            //string CurStr = string.Empty;
-            CodeString codeString = new CodeString();
-            codeString.Code = null;
+            string CurStr = string.Empty;
             for (int i = 0; i < charData.Length; i++)
             {
-                //string C = new string(charData[i], 1);
-                codeString.Str = charData[i];
+                string C = new string(charData[i], 1);
 
                 if (chainTable.Contains(CurStr + C))
                 {
