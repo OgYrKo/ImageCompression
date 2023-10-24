@@ -54,7 +54,7 @@ namespace ImageCompression.Algorithms
                     freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
                     if (!chainTable.TryAddNewChain(current, C))
                     {
-                        freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
+                        //freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
                         freeBitsCountInLastByte = WriteValue(ref result, ClearCode, freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
                         TableInit(ref chainTable);
                     }
@@ -163,7 +163,7 @@ namespace ImageCompression.Algorithms
             while (code != CodeEndOfInformation)
             {
                 counter++;
-                //if (counter % 100 == 0) 
+                if (counter % 100 == 0) 
                 Debug.WriteLine(counter);
                 //Debug.WriteLine("Decompress:{0}\n", counter);
                 if (code == ClearCode)

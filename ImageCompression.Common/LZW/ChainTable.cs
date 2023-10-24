@@ -39,8 +39,8 @@ namespace ImageCompression.Common.LZW
 
         private void SetLimitsByDefault()
         {
-            CurrentChainLimitPower = 9;
-            CurrentChainLimit = 512;
+            CurrentChainLimitPower = 12;// 9;
+            CurrentChainLimit = 4096;// 512;
         }
 
         public bool IsOverflow() => Table.Count == MaxChainCount;
@@ -50,11 +50,11 @@ namespace ImageCompression.Common.LZW
         /// </summary>
         protected void TryUpdatePowerOfTwo()
         {
-            if (CurrentChainLimit == Table.Count)
-            {
-                CurrentChainLimit *= 2;
-                CurrentChainLimitPower++;
-            }
+            //if (CurrentChainLimit == Table.Count)
+            //{
+            //    CurrentChainLimit *= 2;
+            //    CurrentChainLimitPower++;
+            //}
         }
     }
 }

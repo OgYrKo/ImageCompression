@@ -25,6 +25,24 @@ namespace ImageCompression.Common.LZW
 
         public override int GetHashCode()
         {
+            //int key = 0;
+
+            //if (Code != null)
+            //{
+            //    // Если Code не является null, учитываем его в хэше.
+            //    key = (Code.Value << 8);
+            //}
+
+            //if (Str != null)
+            //{
+            //    // Если Str не является null, учитываем его в хэше.
+            //    key ^= Str.Value;
+            //}
+
+
+            //// Применяем заданную хэш-функцию.
+            //return ((key >> 12) ^ key) & 8191;
+
             unchecked
             {
                 int hash = 17;
