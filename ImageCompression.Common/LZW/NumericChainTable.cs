@@ -33,7 +33,8 @@ namespace ImageCompression.Common.LZW
         }
 
         public bool Contains(CodeString key) => Table.ContainsKey(key);
-        public bool Contains(CodeString key, char newChar) => Table.ContainsKey(new CodeString(key.IsNullable()?null:(ushort?)Table[key],newChar));
+        //public bool Contains(CodeString key, char newChar) => Table.ContainsKey(new CodeString(key.IsNullable()?null:(ushort?)Table[key],newChar));
+        public bool Contains(CodeString key, char newChar) => Table.ContainsKey(new CodeString(key is null ? null:(ushort?)Table[key],newChar));
         public ushort this[CodeString key]
         {
             get => Table[key];

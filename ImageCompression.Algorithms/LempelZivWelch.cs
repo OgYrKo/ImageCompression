@@ -32,42 +32,40 @@ namespace ImageCompression.Algorithms
 
         public byte[] Compress(byte[] byteData)
         {
+            char[] charData = Converter.ToChars(byteData);
+            List<byte> result = new List<byte>();
             NumericChainTable chainTable = new NumericChainTable();
             TableInit(ref chainTable);
-            char[] charData = Converter.ToChars(byteData);
 
-            List<byte> result = new List<byte>();
             byte freeBitsCountInLastByte = WriteValue(ref result, ClearCode, 0, chainTable.CurrentChainLimitPower);
 
-            CodeString current = new CodeString(null, null);
-            for (int i = 0; i < charData.Length; i++)
+            CodeString current = null;
+            int i = 0;
+            for (; i < charData.Length; i++)
             {
                 char C = charData[i];
                 if (chainTable.Contains(current, C))
                 {
-                    if (current.IsNullable())
-                        current = new CodeString(null, C);
-                    else
-                        current = new CodeString(chainTable[current], C);
+                    if (current == null) current = new CodeString(null, C);
+                    else current = new CodeString(chainTable[current], C);
                 }
                 else
                 {
                     freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
-                    if (chainTable.TryAddNewChain(current, C))
-                        current = new CodeString(null, C);
-                    else
+                    if (!chainTable.TryAddNewChain(current, C))
                     {
                         freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
                         freeBitsCountInLastByte = WriteValue(ref result, ClearCode, freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
                         TableInit(ref chainTable);
-                        current = new CodeString(null, null);
                     }
+                    current = new CodeString(null, C);
                 }
             }
             freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
             WriteValue(ref result, CodeEndOfInformation, freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
             return result.ToArray();
         }
+
 
         /// <summary>
         /// Добавляет число в массив байт
@@ -153,15 +151,20 @@ namespace ImageCompression.Algorithms
         public byte[] Decompress(byte[] data)
         {
             StringChainTable chainTable = new StringChainTable();
-            List<string> result = new List<string>();
+            //List<string> result = new List<string>();
+            List<byte> result = new List<byte>();
             int currentIndex = 0;
             int readBitsCountInLastByte = 0;
             ushort old_code = 0;
+
+
             ushort code = ReadValue(data, ref currentIndex, ref readBitsCountInLastByte, chainTable.CurrentChainLimitPower);
-            int counter = 0;
+            int counter = 0;//TODO to remove
             while (code != CodeEndOfInformation)
             {
                 counter++;
+                //if (counter % 100 == 0) 
+                Debug.WriteLine(counter);
                 //Debug.WriteLine("Decompress:{0}\n", counter);
                 if (code == ClearCode)
                 {
@@ -171,30 +174,51 @@ namespace ImageCompression.Algorithms
                     {
                         break; // end process
                     }
-                    result.Add(chainTable.GetString(code));
-                    old_code = code;
+
+                    result.AddRange(chainTable.GetBytes(code));
+                    //result.Add(chainTable.GetString(code));
                 }
                 else
                 {
+                    //Stopwatch stopwatch = new Stopwatch();
+                    //Stopwatch stopwatchIf = new Stopwatch();
+                    //Stopwatch stopwatchIfEquation = new Stopwatch();
+                    //Stopwatch stopwatchElse = new Stopwatch();
+                    //stopwatch.Start();
+                    //stopwatchIf.Start();
                     if (chainTable.Contains(code))
                     {
-                        result.Add(chainTable.GetString(code));
-                        chainTable.TryAddNewChain(chainTable[old_code], chainTable[code]);
-                        old_code = code;
+                        //stopwatchIfEquation.Start();
+                        result.AddRange(chainTable.GetBytes(code));
+                        //stopwatchIfEquation.Stop();
+                        chainTable.TryAddNewChain(new CodeString(old_code, (char)chainTable.GetFirstByte(code)));
+                        //chainTable.TryAddNewChain(chainTable[old_code], chainTable[code]);
+                        //stopwatchIf.Stop();
                     }
                     else
                     {
-                        string OutString = chainTable.GetString(old_code);
-                        OutString += OutString[0];
-                        result.Add(OutString);
-                        chainTable.TryAddNewChain(new CodeString(old_code, OutString[0]));
-                        old_code = code;
+                        //stopwatchElse.Start();
+                        byte[] bytes = chainTable.GetBytes(old_code);
+                        result.AddRange(bytes);
+                        result.Add(bytes[0]);
+                        chainTable.TryAddNewChain(new CodeString(old_code, (char)bytes[0]));
+                        
+                        //stopwatchElse.Stop();
                     }
+                    
+                    //stopwatch.Stop();
+                    //stopwatchIf.Stop();
+                    //stopwatchElse.Stop();
+                    //Debug.WriteLine("Not clear code time: {0}", stopwatch.ElapsedMilliseconds);
+                    //Debug.WriteLine("If time: {0}", stopwatchIf.ElapsedMilliseconds);
+                    //Debug.WriteLine("If Add time: {0}", stopwatchIfEquation.ElapsedMilliseconds);
+
                 }
+                old_code = code;
                 code = ReadValue(data, ref currentIndex, ref readBitsCountInLastByte, chainTable.CurrentChainLimitPower);
             }
 
-            return Converter.ToBytes(string.Join("", result));
+            return result.ToArray();//Converter.ToBytes(string.Join("", result));
 
         }
 
