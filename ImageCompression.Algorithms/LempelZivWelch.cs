@@ -21,46 +21,43 @@ namespace ImageCompression.Algorithms
         public const ushort CodeEndOfInformation = 257;
         const byte BITS_IN_BYTE = 8;
 
-        private void TableInit(ref NumericChainTable chainTable)
-        {
-            chainTable.Reset();
-        }
-        private void TableInit(ref StringChainTable chainTable)
+        private void TableInit(IChainTable chainTable)
         {
             chainTable.Reset();
         }
 
         public byte[] Compress(byte[] byteData)
         {
-            char[] charData = Converter.ToChars(byteData);
             List<byte> result = new List<byte>();
             NumericChainTable chainTable = new NumericChainTable();
-            TableInit(ref chainTable);
+            TableInit(chainTable);
 
             byte freeBitsCountInLastByte = WriteValue(ref result, ClearCode, 0, chainTable.CurrentChainLimitPower);
 
             CodeString current = null;
             int i = 0;
-            for (; i < charData.Length; i++)
+            for (; i < byteData.Length; i++)
             {
-                char C = charData[i];
+                byte C = byteData[i];
                 if (chainTable.Contains(current, C))
                 {
-                    if (current == null) current = new CodeString(null, C);
-                    else current = new CodeString(chainTable[current], C);
+                    current = new CodeString(current, C);
                 }
                 else
                 {
                     freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
                     if (!chainTable.TryAddNewChain(current, C))
                     {
-                        //freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
                         freeBitsCountInLastByte = WriteValue(ref result, ClearCode, freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
-                        TableInit(ref chainTable);
+                        TableInit(chainTable);
+                        //freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
                     }
                     current = new CodeString(null, C);
                 }
+                if (current != null && current.Previous != null)
+                    current.Code = chainTable[current.Previous];
             }
+            
             freeBitsCountInLastByte = WriteValue(ref result, chainTable[current], freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
             WriteValue(ref result, CodeEndOfInformation, freeBitsCountInLastByte, chainTable.CurrentChainLimitPower);
             return result.ToArray();
@@ -151,7 +148,6 @@ namespace ImageCompression.Algorithms
         public byte[] Decompress(byte[] data)
         {
             StringChainTable chainTable = new StringChainTable();
-            //List<string> result = new List<string>();
             List<byte> result = new List<byte>();
             int currentIndex = 0;
             int readBitsCountInLastByte = 0;
@@ -163,12 +159,12 @@ namespace ImageCompression.Algorithms
             while (code != CodeEndOfInformation)
             {
                 counter++;
-                if (counter % 100 == 0) 
+                //if (counter % 100 == 0) 
                 Debug.WriteLine(counter);
                 //Debug.WriteLine("Decompress:{0}\n", counter);
                 if (code == ClearCode)
                 {
-                    TableInit(ref chainTable);
+                    TableInit(chainTable);
                     code = ReadValue(data, ref currentIndex, ref readBitsCountInLastByte, chainTable.CurrentChainLimitPower);
                     if (code == CodeEndOfInformation)
                     {
@@ -176,7 +172,6 @@ namespace ImageCompression.Algorithms
                     }
 
                     result.AddRange(chainTable.GetBytes(code));
-                    //result.Add(chainTable.GetString(code));
                 }
                 else
                 {
@@ -191,8 +186,7 @@ namespace ImageCompression.Algorithms
                         //stopwatchIfEquation.Start();
                         result.AddRange(chainTable.GetBytes(code));
                         //stopwatchIfEquation.Stop();
-                        chainTable.TryAddNewChain(new CodeString(old_code, (char)chainTable.GetFirstByte(code)));
-                        //chainTable.TryAddNewChain(chainTable[old_code], chainTable[code]);
+                        chainTable.TryAddNewChain(chainTable[old_code], chainTable.GetFirstByte(code));
                         //stopwatchIf.Stop();
                     }
                     else
@@ -201,7 +195,7 @@ namespace ImageCompression.Algorithms
                         byte[] bytes = chainTable.GetBytes(old_code);
                         result.AddRange(bytes);
                         result.Add(bytes[0]);
-                        chainTable.TryAddNewChain(new CodeString(old_code, (char)bytes[0]));
+                        chainTable.TryAddNewChain(chainTable[old_code], bytes[0]);
                         
                         //stopwatchElse.Stop();
                     }

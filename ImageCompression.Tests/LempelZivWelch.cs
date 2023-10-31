@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using static ImageCompression.Tests.CheckArrays;
 using System.IO;
 using LZW = ImageCompression.Algorithms.LempelZivWelch;
+using System.Linq;
 
 namespace ImageCompression.Tests
 {
@@ -41,6 +42,49 @@ namespace ImageCompression.Tests
             }
             CollectionAssert.AreEqual(expected, actual, $"Compression failed.\nExpected: {string.Join(" ", expected)}\nActual: {string.Join(" ", actual)}\n");
         }
+        [TestMethod]
+        public void FullTable()
+        {
+            //0,00,000,0000,00000
+            //0,258,259,260,261 ... 512, 513
+            int expectedCount = 256;//257
+            int inputCount = 0; // 32896;//33152
+            for(int i = 1; i <= expectedCount; i++)
+            {
+                inputCount += i;
+            }
+            byte[] input = new byte[inputCount];
+            List<ushort> expected = new List<ushort>{256,0};
+            for(int i = 0; i < expectedCount-1; i++)//-1 так как он уже есть в списке
+            {
+                expected.Add((ushort)(258 + i));
+            }
+            expected.Add(257);
+
+            byte[] compressed = Algorithm.Compress(input);
+            List<ushort> actualCompressed = new List<ushort>();
+            int currentIndex = 0;
+            int readBeatsInLast = 0;
+
+
+            byte bitsInNum = 9;
+            int allBits = compressed.Length * 8;
+            int bitsRead = 0;
+            actualCompressed.Add(LZW.ReadValue(compressed, ref currentIndex, ref readBeatsInLast, bitsInNum));//init code
+            bitsRead += bitsInNum;
+            int loopCounter = 1;
+            while (bitsRead + bitsInNum <= allBits)
+            {
+                actualCompressed.Add(LZW.ReadValue(compressed, ref currentIndex, ref readBeatsInLast, bitsInNum));
+                bitsRead += bitsInNum;
+                loopCounter++;
+                if (loopCounter % 256 == 0) 
+                    bitsInNum++;
+            }
+            CollectionAssert.AreEqual(expected, actualCompressed, $"Compression failed.\nExpected: {string.Join(" ", expected)}\nActual: {string.Join(" ", actualCompressed)}\n");
+            byte[] actual = Algorithm.Decompress(compressed);
+            CollectionAssert.AreEqual(input, actual, $"Decompression failed.\nExpected: {string.Join(" ", input)}\nActual: {string.Join(" ", actual)}\n");
+        }
 
         [TestMethod]
         public void TestDeompressionHeader()
@@ -62,7 +106,7 @@ namespace ImageCompression.Tests
                 freeBeatsInLast = LZW.WriteValue(ref input, value, freeBeatsInLast,bitsInNum);
             }
             byte[]actual = Algorithm.Decompress(input.ToArray());
-            CollectionAssert.AreEqual(expected, actual, $"Compression failed.\nExpected: {string.Join(" ", expected)}\nActual: {string.Join(" ", actual)}\n");
+            CollectionAssert.AreEqual(input, actual, $"Decompression failed.\nExpected: {string.Join(" ", expected)}\nActual: {string.Join(" ", actual)}\n");
         }
 
         [TestMethod]

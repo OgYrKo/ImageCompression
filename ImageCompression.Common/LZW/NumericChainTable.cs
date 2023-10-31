@@ -6,38 +6,33 @@ namespace ImageCompression.Common.LZW
 {
     public class NumericChainTable : ChainTable<CodeString,ushort>
     {
-        
-        public NumericChainTable(int chainCount = 4096) : base(chainCount) { }
+        public NumericChainTable(int chainCount = 4096) : base(chainCount,2) { }
 
         protected override void AddDefaultValuesToTable()
         {
-            for (ushort i = 0; i <= byte.MaxValue; i++)
+            checked
             {
-                char ch = (char)i;
-                Table.Add(new CodeString(null, ch),i);
+                for (ushort i = 0; i <= byte.MaxValue; i++)
+                {
+                    Table.Add(new CodeString(null, i, (byte)i), i);
+                }
             }
         }
 
-        public bool TryAddNewChain(CodeString key)
+        public override bool TryAddNewChain(CodeString previous, byte c)
         {
-            if (IsOverflow()) return false;
-            TryUpdatePowerOfTwo();
-            ushort code = NextCode++;
-            Table.Add(key,code);
-            return true;
+            return TryAddNewChain(new CodeString(previous, Table[previous], c));
         }
 
-        public bool TryAddNewChain(CodeString key,char c)
+        protected override void AddToTable(CodeString newChain,ushort code)
         {
-            return TryAddNewChain(new CodeString(Table[key], c));
+            Table.Add(newChain, code);
         }
 
-        public bool Contains(CodeString key) => Table.ContainsKey(key);
-        //public bool Contains(CodeString key, char newChar) => Table.ContainsKey(new CodeString(key.IsNullable()?null:(ushort?)Table[key],newChar));
-        public bool Contains(CodeString key, char newChar) => Table.ContainsKey(new CodeString(key is null ? null:(ushort?)Table[key],newChar));
-        public ushort this[CodeString key]
+        public bool Contains(CodeString key, byte newChar)
         {
-            get => Table[key];
+            CodeString newCode = key == null ? new CodeString(key, newChar) : new CodeString(key, Table[key], newChar);
+            return Table.ContainsKey(newCode);
         }
     }
 }
