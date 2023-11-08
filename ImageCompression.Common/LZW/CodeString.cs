@@ -11,7 +11,7 @@ namespace ImageCompression.Common.LZW
         public ushort? Code { get; set; }
         public byte Str { get; set; }
 
-        public CodeString(CodeString previous,ushort? code, byte c)
+        public CodeString(CodeString previous, ushort? code, byte c)
         {
             Previous = previous;
             Code = code;
@@ -27,28 +27,31 @@ namespace ImageCompression.Common.LZW
 
         public override bool Equals(object obj)
         {
-            if(Previous != null&&Code==null)
+            if (Previous != null && Code == null)
                 throw new NullReferenceException("Код предыдущего элемента не может быть пустым");
-            if (!(obj is CodeString)) 
+            if (!(obj is CodeString))
                 return false;
             CodeString other = (CodeString)obj;
-            if(other.Previous != null&&other.Code==null)
+            if (other.Previous != null && other.Code == null)
                 throw new NullReferenceException("Код предыдущего элемента не может быть пустым");
-            
-            bool previousEqual = (Previous != null && other.Previous != null && Previous.Code == other.Previous.Code&&Previous.Str==other.Previous.Str) 
+
+            bool previousEqual = (Previous != null && other.Previous != null && Previous.Code == other.Previous.Code && Previous.Str == other.Previous.Str)
                 || (Previous == null && other.Previous == null);
             return previousEqual && Str == other.Str;
         }
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                int hash = 17;
-                if(Previous != null )  hash = hash * 23 + Previous.Code.GetHashCode();
-                hash = hash * 23 + Str.GetHashCode();
-                return hash;
-            }
+
+            int hash = 17;
+            if (Previous != null) hash = hash * 23 + Previous.Code.GetHashCode();
+            hash = hash * 23 + Str.GetHashCode();
+            return hash;
+
+            //ushort key = 0;
+            //if (Previous != null) key = (ushort)Previous.Code;
+            //return key+Str;
+
         }
 
         public byte[] ToBytes()

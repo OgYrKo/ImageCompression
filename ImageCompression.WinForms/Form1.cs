@@ -254,7 +254,7 @@ namespace ImageCompression.WinForms
                 MessageBox.Show("Не выбрано изображение для сжатия: ", "Инфо", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
                 return;
             }
-            try
+            //try
             {
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
@@ -264,10 +264,10 @@ namespace ImageCompression.WinForms
                 DecompressButton.Enabled = true;
                 SaveCompressedFileButton.Enabled = true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+            //catch (Exception ex)
+            //{
+            //    MessageBox.Show(ex.Message);
+            //}
         }
         private void SetCompressionResult(long uncompressedImageSize, long compressedImageSize, long compressionTime)
         {
