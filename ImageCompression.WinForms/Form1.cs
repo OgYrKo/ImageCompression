@@ -382,6 +382,9 @@ namespace ImageCompression.WinForms
                 case Algorithm.LZW:
                     CurrentAlgorithm = new LempelZivWelch();
                     break;
+                case Algorithm.Haffman:
+                    CurrentAlgorithm = new Haffman();
+                    break;
                 default:
                     MessageBox.Show("Алгоритм не реализован");
                     break;

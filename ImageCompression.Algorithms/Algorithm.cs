@@ -8,6 +8,7 @@ namespace ImageCompression.Algorithms
     public enum Algorithm:byte
     {
         RLE,
-        LZW
+        LZW,
+        Haffman
     }
 }
