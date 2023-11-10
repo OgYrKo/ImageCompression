@@ -17,7 +17,7 @@ namespace ImageCompression.Algorithms
         byte maxChainElementKey;
         BitArray maxChainElementValue;
 
-       
+
         public byte[] Compress(byte[] data)
         {
             SetByDefault();
@@ -48,16 +48,28 @@ namespace ImageCompression.Algorithms
         private LinkedList<Node> CreatePriorityQuery(byte[] data)
         {
             int[] byteFrequencyTable = GetFrequencyTable(data);
-
-            Node[] nodes = new Node[byteFrequencyTable.Length];
+            LinkedList<Node> query = new LinkedList<Node>();
             for (int i = 0; i < byteFrequencyTable.Length; i++)
             {
-                nodes[i] = new Node() { Value = new object[] { (byte)i }, Weight = byteFrequencyTable[i] };
+                if (byteFrequencyTable[i] != 0)
+                {
+                    //add Node to query in sorted order
+                    Node nodeToAdd = new Node() { Value = new object[] { (byte)i }, Weight = byteFrequencyTable[i] };
+                    //find node with weight less than nodeToAdd
+                    LinkedListNode<Node> node = query.First;
+                    while (node != null && node.Value.Weight < nodeToAdd.Weight)
+                    {
+                        node = node.Next;
+                    }
+                    //add nodeToAdd before node
+                    if (node == null)
+                    {
+                        query.AddLast(nodeToAdd);
+                    }
+                    else query.AddBefore(node, nodeToAdd);
+                }
             }
-            //sort nodes by weight and remove nodes with weight = 0
-            Array.Sort(nodes, (x, y) => x.Weight.CompareTo(y.Weight));
-            //create query by nodes
-            return new LinkedList<Node>(nodes);
+            return query;
         }
         private int[] GetFrequencyTable(byte[] data)
         {
